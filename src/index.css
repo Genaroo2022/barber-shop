@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 20% 6%;
+    --foreground: 40 20% 92%;
+
+    --card: 220 18% 10%;
+    --card-foreground: 40 20% 92%;
+
+    --popover: 220 18% 10%;
+    --popover-foreground: 40 20% 92%;
+
+    --primary: 40 65% 50%;
+    --primary-foreground: 220 20% 6%;
+
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 40 20% 85%;
+
+    --muted: 220 15% 14%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 40 65% 50%;
+    --accent-foreground: 220 20% 6%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 40 65% 50%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 220 20% 8%;
+    --sidebar-foreground: 40 20% 85%;
+    --sidebar-primary: 40 65% 50%;
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 220 15% 14%;
+    --sidebar-accent-foreground: 40 20% 85%;
+    --sidebar-border: 220 15% 16%;
+    --sidebar-ring: 40 65% 50%;
+
+    --gold: 40 65% 50%;
+    --gold-light: 40 70% 65%;
+    --gold-dark: 40 60% 35%;
+    --dark-surface: 220 18% 10%;
+    --darker-surface: 220 20% 7%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .gold-gradient {
+    background: linear-gradient(135deg, hsl(40 65% 50%), hsl(40 70% 65%), hsl(40 65% 50%));
+  }
+  .gold-text {
+    background: linear-gradient(135deg, hsl(40 65% 50%), hsl(40 70% 65%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glass-card {
+    background: hsl(220 18% 10% / 0.8);
+    backdrop-filter: blur(16px);
+    border: 1px solid hsl(220 15% 18%);
+  }
+  .gold-border-glow {
+    box-shadow: 0 0 20px hsl(40 65% 50% / 0.15), inset 0 0 20px hsl(40 65% 50% / 0.05);
+  }
+}

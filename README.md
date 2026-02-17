@@ -137,6 +137,56 @@ npm run dev
 
 URL frontend: `http://localhost:5173`
 
+## Deploy (Neon + Render + Vercel/Netlify)
+
+### 1) Neon -> `DB_URL` JDBC para Spring
+
+Neon entrega una URL tipo `postgresql://...`. En Spring debes usar formato JDBC:
+
+```env
+DB_URL=jdbc:postgresql://<neon-host>/<db>?sslmode=require&channelBinding=require
+DB_USER=<neon-user>
+DB_PASSWORD=<neon-password>
+```
+
+Nota: si `channelBinding` no es aceptado por el driver en tu entorno, deja solo `?sslmode=require`.
+
+### 2) Backend en Render (Web Service)
+
+Este repo incluye `render.yaml` para deploy con Docker usando `backend/Dockerfile`.
+
+Variables obligatorias en Render:
+
+```env
+SPRING_PROFILES_ACTIVE=prod
+DB_URL=jdbc:postgresql://<neon-host>/<db>?sslmode=require&channelBinding=require
+DB_USER=<neon-user>
+DB_PASSWORD=<neon-password>
+JWT_SECRET_BASE64=<secret-base64-256-bit-o-mas>
+CORS_ALLOWED_ORIGINS=https://<tu-frontend>.vercel.app,https://<tu-frontend>.netlify.app
+```
+
+Opcional:
+
+```env
+JWT_EXPIRATION_SECONDS=28800
+PORT=8080
+```
+
+Health check recomendado en Render: `/api/public/services`.
+
+### 3) Frontend en Vercel o Netlify
+
+Variables frontend:
+
+```env
+VITE_API_BASE_URL=https://<tu-backend-render>.onrender.com
+```
+
+El repo incluye archivos para SPA routing:
+- `vercel.json`
+- `netlify.toml`
+
 ## Endpoints principales
 
 Publicos:

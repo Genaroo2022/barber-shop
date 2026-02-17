@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: style-book-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/public/services
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod

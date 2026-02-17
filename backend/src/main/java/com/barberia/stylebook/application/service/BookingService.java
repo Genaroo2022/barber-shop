@@ -34,6 +34,13 @@ public class BookingService {
 
     @Transactional
     public AppointmentResponse create(CreateAppointmentRequest request) {
+        String normalizedClientName = request.clientName().trim();
+        String normalizedClientPhone = request.clientPhone().trim();
+        String normalizedNotes = request.notes() == null ? null : request.notes().trim();
+        if (normalizedNotes != null && normalizedNotes.isEmpty()) {
+            normalizedNotes = null;
+        }
+
         ServiceCatalog service = serviceCatalogRepository.findById(request.serviceId())
                 .orElseThrow(() -> new NotFoundException("Servicio no encontrado"));
 
@@ -46,15 +53,15 @@ public class BookingService {
             throw new BusinessRuleException("Ya existe un turno para ese servicio en esa fecha/hora");
         }
 
-        Client client = clientRepository.findByPhone(request.clientPhone())
+        Client client = clientRepository.findByPhone(normalizedClientPhone)
                 .map(existing -> {
-                    existing.setName(request.clientName());
+                    existing.setName(normalizedClientName);
                     return existing;
                 })
                 .orElseGet(() -> {
                     Client created = new Client();
-                    created.setName(request.clientName());
-                    created.setPhone(request.clientPhone());
+                    created.setName(normalizedClientName);
+                    created.setPhone(normalizedClientPhone);
                     return created;
                 });
 
@@ -64,7 +71,7 @@ public class BookingService {
         appointment.setClient(persistedClient);
         appointment.setService(service);
         appointment.setAppointmentAt(appointmentAt);
-        appointment.setNotes(request.notes());
+        appointment.setNotes(normalizedNotes);
 
         Appointment saved = appointmentRepository.save(appointment);
         return AppointmentMapper.toResponse(saved);

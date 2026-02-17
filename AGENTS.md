@@ -32,6 +32,12 @@ Tooling:
 - npm (frontend)
 - Docker + docker compose
 
+Deployment (current):
+- Backend: Render (Web Service)
+- Frontend: Vercel
+- Database: Neon (PostgreSQL)
+- Netlify: not in use
+
 ## High-Level Architecture
 
 ### Frontend (`/`)

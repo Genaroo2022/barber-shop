@@ -1,5 +1,7 @@
 package com.barberia.stylebook.security;
 
+import com.barberia.stylebook.domain.entity.AdminUser;
+import com.barberia.stylebook.repository.AdminUserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,9 +20,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String PREFIX = "Bearer ";
     private final JwtService jwtService;
+    private final AdminUserRepository adminUserRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, AdminUserRepository adminUserRepository) {
         this.jwtService = jwtService;
+        this.adminUserRepository = adminUserRepository;
     }
 
     @Override
@@ -34,12 +38,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = header.substring(PREFIX.length());
             if (jwtService.isValid(token)) {
                 jwtService.extractSubject(token).ifPresent(subject -> {
-                    var auth = new UsernamePasswordAuthenticationToken(
-                            subject,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
-                    );
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    adminUserRepository.findByEmailIgnoreCase(subject)
+                            .filter(user -> Boolean.TRUE.equals(user.getActive()))
+                            .map(AdminUser::getRole)
+                            .filter(role -> "ADMIN".equalsIgnoreCase(role))
+                            .ifPresent(role -> {
+                                var auth = new UsernamePasswordAuthenticationToken(
+                                        subject,
+                                        null,
+                                        List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                                );
+                                SecurityContextHolder.getContext().setAuthentication(auth);
+                            });
                 });
             }
         }

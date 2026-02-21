@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Scissors, CalendarDays, Users, BarChart3, DollarSign, LogOut, Menu, X } from "lucide-react";
+import { Scissors, CalendarDays, Users, BarChart3, DollarSign, LogOut, Menu, X, Images, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AppointmentsTab from "@/components/admin/AppointmentsTab";
 import ClientsTab from "@/components/admin/ClientsTab";
 import StatsTab from "@/components/admin/StatsTab";
 import IncomeTab from "@/components/admin/IncomeTab";
+import ServicesTab from "@/components/admin/ServicesTab";
+import GalleryTab from "@/components/admin/GalleryTab";
 import { clearAccessToken, isAuthenticated } from "@/lib/auth";
 
 const tabs = [
@@ -13,6 +15,8 @@ const tabs = [
   { id: "clients", label: "Clientes", icon: Users },
   { id: "stats", label: "Estadisticas", icon: BarChart3 },
   { id: "income", label: "Ingresos", icon: DollarSign },
+  { id: "services", label: "Servicios", icon: Tag },
+  { id: "gallery", label: "Galeria", icon: Images },
 ];
 
 const Admin = () => {
@@ -94,6 +98,8 @@ const Admin = () => {
           {activeTab === "clients" && <ClientsTab />}
           {activeTab === "stats" && <StatsTab />}
           {activeTab === "income" && <IncomeTab />}
+          {activeTab === "services" && <ServicesTab />}
+          {activeTab === "gallery" && <GalleryTab />}
         </div>
       </main>
     </div>

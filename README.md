@@ -39,6 +39,14 @@ Para detener:
 docker compose down
 ```
 
+## Estado actual importante
+
+- El backend ejecuta migraciones automaticamente al iniciar (Flyway via `SchemaMigrationConfig`).
+- Si la DB local esta vacia, se aplican `V1` y `V2` al levantar backend.
+- Endpoints nuevos:
+  - CRUD de servicios en admin
+  - Gestion de galeria en admin y consumo publico
+
 ## Modelo de dominio
 
 - `clients`: clientes unicos por telefono
@@ -181,6 +189,8 @@ Variables frontend:
 
 ```env
 VITE_API_BASE_URL=https://<tu-backend-render>.onrender.com
+VITE_CLOUDINARY_CLOUD_NAME=<tu-cloud-name>
+VITE_CLOUDINARY_UPLOAD_PRESET=<tu-upload-preset-unsigned>
 ```
 
 El repo incluye archivos para SPA routing:
@@ -191,6 +201,7 @@ El repo incluye archivos para SPA routing:
 
 Publicos:
 - `GET /api/public/services`
+- `GET /api/public/gallery`
 - `POST /api/public/appointments`
 - `POST /api/auth/login`
 
@@ -200,6 +211,45 @@ Admin (JWT Bearer):
 - `GET /api/admin/metrics/overview`
 - `GET /api/admin/metrics/income`
 - `GET /api/admin/metrics/clients`
+- `GET /api/admin/services`
+- `POST /api/admin/services`
+- `PUT /api/admin/services/{id}`
+- `DELETE /api/admin/services/{id}`
+- `GET /api/admin/gallery`
+- `POST /api/admin/gallery`
+- `PUT /api/admin/gallery/{id}`
+- `DELETE /api/admin/gallery/{id}`
+
+## Troubleshooting local rapido
+
+### 1) Error JWT weak key
+
+Si ves `WeakKeyException`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\gen-jwt-secret.ps1
+```
+
+Copia el valor en `.env` como `JWT_SECRET_BASE64` y reinicia Docker.
+
+### 2) Docker snapshot/cache corrupto al build frontend
+
+Si aparece error tipo `parent snapshot ... does not exist`:
+
+```powershell
+docker compose down --remove-orphans
+docker builder prune -af
+docker compose build --no-cache frontend
+docker compose up -d
+```
+
+### 3) Frontend/Backend no responden despues de cambios
+
+```powershell
+docker compose ps
+docker compose logs backend --tail=200
+docker compose logs frontend --tail=200
+```
 
 ## Pruebas rapidas con curl
 

@@ -46,7 +46,7 @@ const Login = () => {
               placeholder="tu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-secondary/50 border-border/50 focus:border-primary"
+              className="bg-white text-black placeholder:text-gray-500 border-gray-300 focus:border-primary"
             />
           </div>
           <div className="space-y-2">
@@ -56,7 +56,7 @@ const Login = () => {
               placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-secondary/50 border-border/50 focus:border-primary"
+              className="bg-white text-black placeholder:text-gray-500 border-gray-300 focus:border-primary"
             />
           </div>
           <Button

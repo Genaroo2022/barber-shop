@@ -55,6 +55,16 @@ export type ServiceItem = {
   name: string;
   price: number;
   durationMinutes: number;
+  active: boolean;
+};
+
+export type GalleryImageItem = {
+  id: string;
+  title: string;
+  category?: string | null;
+  imageUrl: string;
+  sortOrder: number;
+  active: boolean;
 };
 
 export type AppointmentItem = {
@@ -148,4 +158,90 @@ export async function getAdminOverview(): Promise<OverviewMetrics> {
 
 export async function getAdminIncome(): Promise<IncomeMetrics> {
   return apiRequest<IncomeMetrics>("/api/admin/metrics/income", { auth: true });
+}
+
+export async function listAdminServices(): Promise<ServiceItem[]> {
+  return apiRequest<ServiceItem[]>("/api/admin/services", { auth: true });
+}
+
+export async function createAdminService(payload: {
+  name: string;
+  price: number;
+  durationMinutes: number;
+  active: boolean;
+}): Promise<ServiceItem> {
+  return apiRequest<ServiceItem>("/api/admin/services", {
+    method: "POST",
+    body: payload,
+    auth: true,
+  });
+}
+
+export async function updateAdminService(
+  id: string,
+  payload: {
+    name: string;
+    price: number;
+    durationMinutes: number;
+    active: boolean;
+  }
+): Promise<ServiceItem> {
+  return apiRequest<ServiceItem>(`/api/admin/services/${id}`, {
+    method: "PUT",
+    body: payload,
+    auth: true,
+  });
+}
+
+export async function deleteAdminService(id: string): Promise<void> {
+  await apiRequest<null>(`/api/admin/services/${id}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
+export async function listPublicGalleryImages(): Promise<GalleryImageItem[]> {
+  return apiRequest<GalleryImageItem[]>("/api/public/gallery");
+}
+
+export async function listAdminGalleryImages(): Promise<GalleryImageItem[]> {
+  return apiRequest<GalleryImageItem[]>("/api/admin/gallery", { auth: true });
+}
+
+export async function createAdminGalleryImage(payload: {
+  title: string;
+  category?: string;
+  imageUrl: string;
+  sortOrder: number;
+  active: boolean;
+}): Promise<GalleryImageItem> {
+  return apiRequest<GalleryImageItem>("/api/admin/gallery", {
+    method: "POST",
+    body: payload,
+    auth: true,
+  });
+}
+
+export async function updateAdminGalleryImage(
+  id: string,
+  payload: {
+    title: string;
+    category?: string;
+    imageUrl: string;
+    sortOrder: number;
+    active: boolean;
+  }
+): Promise<GalleryImageItem> {
+  return apiRequest<GalleryImageItem>(`/api/admin/gallery/${id}`, {
+    method: "PUT",
+    body: payload,
+    auth: true,
+  });
+}
+
+export async function deleteAdminGalleryImage(id: string): Promise<void> {
+  await apiRequest<null>(`/api/admin/gallery/${id}`, {
+    method: "DELETE",
+    auth: true,
+  });
 }

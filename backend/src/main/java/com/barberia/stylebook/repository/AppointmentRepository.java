@@ -12,4 +12,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     List<Appointment> findAllByOrderByAppointmentAtAsc();
 
     boolean existsByServiceIdAndAppointmentAt(UUID serviceId, OffsetDateTime appointmentAt);
+
+    boolean existsByServiceId(UUID serviceId);
 }

@@ -1,29 +1,81 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Scissors, SparkleIcon } from "lucide-react";
+import { listPublicServices, type ServiceItem } from "@/lib/api";
 
-const services = [
+type VisualService = {
+  id: string;
+  name: string;
+  description: string;
+  priceLabel: string;
+  icon: typeof Scissors;
+  featured?: boolean;
+};
+
+const fallbackDescriptions: Record<string, string> = {
+  "corte de cabello": "Corte profesional adaptado a tu estilo y tipo de rostro",
+  "perfilado de barba": "Diseno y perfilado de barba con navaja y maquina",
+  "corte + barba": "El combo completo para lucir impecable de pies a cabeza",
+};
+
+const fallbackCatalog: VisualService[] = [
   {
+    id: "fallback-1",
     name: "Corte de Cabello",
     description: "Corte profesional adaptado a tu estilo y tipo de rostro",
-    price: "$5.000",
+    priceLabel: "$5.000",
     icon: Scissors,
   },
   {
+    id: "fallback-2",
     name: "Perfilado de Barba",
-    description: "Diseño y perfilado de barba con navaja y máquina",
-    price: "$3.000",
+    description: "Diseno y perfilado de barba con navaja y maquina",
+    priceLabel: "$3.000",
     icon: SparkleIcon,
   },
   {
+    id: "fallback-3",
     name: "Corte + Barba",
     description: "El combo completo para lucir impecable de pies a cabeza",
-    price: "$7.000",
+    priceLabel: "$7.000",
     icon: Scissors,
     featured: true,
   },
 ];
 
 const Services = () => {
+  const [services, setServices] = useState<ServiceItem[]>([]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const data = await listPublicServices();
+        setServices(data);
+      } catch {
+        setServices([]);
+      }
+    };
+    fetchServices();
+  }, []);
+
+  const visualServices: VisualService[] =
+    services.length > 0
+      ? services.map((service, index) => {
+          const normalizedName = service.name.trim().toLowerCase();
+          const description =
+            fallbackDescriptions[normalizedName] || "Servicio profesional personalizado segun tu estilo.";
+          const isCombo = normalizedName.includes("+");
+          return {
+            id: service.id,
+            name: service.name,
+            description,
+            priceLabel: `$${Number(service.price).toLocaleString("es-AR")}`,
+            icon: isCombo || index !== 1 ? Scissors : SparkleIcon,
+            featured: isCombo,
+          };
+        })
+      : fallbackCatalog;
+
   return (
     <section id="services" className="py-24 relative">
       <div className="container px-6">
@@ -40,9 +92,9 @@ const Services = () => {
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {services.map((service, i) => (
+          {visualServices.map((service, i) => (
             <motion.div
-              key={service.name}
+              key={service.id}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -59,7 +111,7 @@ const Services = () => {
               <service.icon className="w-8 h-8 text-primary mx-auto mb-4" />
               <h3 className="font-display text-xl font-semibold mb-2">{service.name}</h3>
               <p className="text-muted-foreground text-sm mb-6">{service.description}</p>
-              <p className="text-3xl font-display font-bold gold-text">{service.price}</p>
+              <p className="text-3xl font-display font-bold gold-text">{service.priceLabel}</p>
             </motion.div>
           ))}
         </div>

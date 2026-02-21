@@ -1,9 +1,12 @@
 package com.barberia.stylebook.web;
 
 import com.barberia.stylebook.application.service.BookingService;
-import com.barberia.stylebook.repository.ServiceCatalogRepository;
+import com.barberia.stylebook.application.service.GalleryImageService;
+import com.barberia.stylebook.application.service.ServiceCatalogService;
 import com.barberia.stylebook.web.dto.AppointmentResponse;
 import com.barberia.stylebook.web.dto.CreateAppointmentRequest;
+import com.barberia.stylebook.web.dto.GalleryImageResponse;
+import com.barberia.stylebook.web.dto.ServiceCatalogResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,18 +16,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public")
 public class PublicBookingController {
 
     private final BookingService bookingService;
-    private final ServiceCatalogRepository serviceCatalogRepository;
+    private final ServiceCatalogService serviceCatalogService;
+    private final GalleryImageService galleryImageService;
 
-    public PublicBookingController(BookingService bookingService, ServiceCatalogRepository serviceCatalogRepository) {
+    public PublicBookingController(
+            BookingService bookingService,
+            ServiceCatalogService serviceCatalogService,
+            GalleryImageService galleryImageService
+    ) {
         this.bookingService = bookingService;
-        this.serviceCatalogRepository = serviceCatalogRepository;
+        this.serviceCatalogService = serviceCatalogService;
+        this.galleryImageService = galleryImageService;
     }
 
     @PostMapping("/appointments")
@@ -33,16 +41,12 @@ public class PublicBookingController {
     }
 
     @GetMapping("/services")
-    public ResponseEntity<List<Map<String, Object>>> listServices() {
-        List<Map<String, Object>> items = serviceCatalogRepository.findAll().stream()
-                .filter(s -> Boolean.TRUE.equals(s.getActive()))
-                .map(s -> Map.<String, Object>of(
-                        "id", s.getId(),
-                        "name", s.getName(),
-                        "price", s.getPrice(),
-                        "durationMinutes", s.getDurationMinutes()
-                ))
-                .toList();
-        return ResponseEntity.ok(items);
+    public ResponseEntity<List<ServiceCatalogResponse>> listServices() {
+        return ResponseEntity.ok(serviceCatalogService.listPublic());
+    }
+
+    @GetMapping("/gallery")
+    public ResponseEntity<List<GalleryImageResponse>> listGallery() {
+        return ResponseEntity.ok(galleryImageService.listPublic());
     }
 }

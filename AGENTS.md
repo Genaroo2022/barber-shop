@@ -149,3 +149,23 @@ npm run build
 5. Keep production-safe defaults:
 - Do not add insecure fallback secrets for `prod`.
 - Keep bootstrap admin disabled by default in `prod`.
+
+## Current Workstream Notes
+
+- Active branch target: `feature/admin-services-gallery`.
+- New capabilities in progress:
+  - Admin CRUD for services (`/api/admin/services`)
+  - Admin/Public gallery management (`/api/admin/gallery`, `/api/public/gallery`)
+- Backend migrations must run automatically at startup.
+  - Current implementation uses `backend/src/main/java/com/barberia/stylebook/config/SchemaMigrationConfig.java`.
+  - Keep migration scripts in `backend/src/main/resources/db/migration`.
+
+## UI Parity Rule
+
+- Preserve current production visual style exactly unless the user explicitly requests redesign.
+- Functional changes (new endpoints/tabs/data binding) should reuse existing spacing, typography and component patterns.
+- If there is a local vs production visual mismatch, prioritize parity with production.
+
+## Handoff Convention
+
+- Keep `NEXT_STEPS.md` updated with immediate next actions so work can continue in a new console/session.

@@ -8,6 +8,7 @@ public record ServiceCatalogResponse(
         String name,
         BigDecimal price,
         Integer durationMinutes,
+        String description,
         Boolean active
 ) {
 }

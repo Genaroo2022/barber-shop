@@ -62,8 +62,7 @@ const Services = () => {
     services.length > 0
       ? services.map((service, index) => {
           const normalizedName = service.name.trim().toLowerCase();
-          const description =
-            fallbackDescriptions[normalizedName] || "Servicio profesional personalizado segun tu estilo.";
+          const description = service.description?.trim() || fallbackDescriptions[normalizedName] || "";
           const isCombo = normalizedName.includes("+");
           return {
             id: service.id,
@@ -110,7 +109,7 @@ const Services = () => {
               )}
               <service.icon className="w-8 h-8 text-primary mx-auto mb-4" />
               <h3 className="font-display text-xl font-semibold mb-2">{service.name}</h3>
-              <p className="text-muted-foreground text-sm mb-6">{service.description}</p>
+              {service.description && <p className="text-muted-foreground text-sm mb-6">{service.description}</p>}
               <p className="text-3xl font-display font-bold gold-text">{service.priceLabel}</p>
             </motion.div>
           ))}

@@ -81,9 +81,12 @@ public class ServiceCatalogService {
     }
 
     private void apply(ServiceCatalog service, AdminServiceUpsertRequest request, String normalizedName) {
+        String normalizedDescription = request.description() == null ? null : request.description().trim();
+
         service.setName(normalizedName);
         service.setPrice(request.price());
         service.setDurationMinutes(request.durationMinutes());
+        service.setDescription((normalizedDescription == null || normalizedDescription.isEmpty()) ? null : normalizedDescription);
         service.setActive(request.active());
     }
 
@@ -93,6 +96,7 @@ public class ServiceCatalogService {
                 service.getName(),
                 service.getPrice(),
                 service.getDurationMinutes(),
+                service.getDescription(),
                 service.getActive()
         );
     }

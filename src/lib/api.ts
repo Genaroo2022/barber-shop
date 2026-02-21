@@ -55,6 +55,7 @@ export type ServiceItem = {
   name: string;
   price: number;
   durationMinutes: number;
+  description?: string | null;
   active: boolean;
 };
 
@@ -218,6 +219,7 @@ export async function createAdminService(payload: {
   name: string;
   price: number;
   durationMinutes: number;
+  description?: string;
   active: boolean;
 }): Promise<ServiceItem> {
   return apiRequest<ServiceItem>("/api/admin/services", {
@@ -233,6 +235,7 @@ export async function updateAdminService(
     name: string;
     price: number;
     durationMinutes: number;
+    description?: string;
     active: boolean;
   }
 ): Promise<ServiceItem> {

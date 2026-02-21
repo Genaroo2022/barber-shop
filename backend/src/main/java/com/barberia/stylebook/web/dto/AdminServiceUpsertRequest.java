@@ -12,6 +12,7 @@ public record AdminServiceUpsertRequest(
         @NotBlank @Size(min = 2, max = 120) String name,
         @NotNull @DecimalMin(value = "0.00") BigDecimal price,
         @NotNull @Positive Integer durationMinutes,
+        @Size(max = 500) String description,
         @NotNull Boolean active
 ) {
 }

@@ -19,6 +19,9 @@ public class ServiceCatalog extends AuditableEntity {
     @Column(name = "duration_minutes", nullable = false)
     private Integer durationMinutes;
 
+    @Column(length = 500)
+    private String description;
+
     @Column(nullable = false)
     private Boolean active = true;
 
@@ -44,6 +47,14 @@ public class ServiceCatalog extends AuditableEntity {
 
     public void setDurationMinutes(Integer durationMinutes) {
         this.durationMinutes = durationMinutes;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Boolean getActive() {

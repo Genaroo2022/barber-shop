@@ -25,6 +25,7 @@ type ServiceForm = {
   name: string;
   price: string;
   durationMinutes: string;
+  description: string;
   active: boolean;
 };
 
@@ -38,6 +39,7 @@ const emptyForm: ServiceForm = {
   name: "",
   price: "",
   durationMinutes: "",
+  description: "",
   active: true,
 };
 
@@ -96,6 +98,7 @@ const ServicesTab = () => {
         name: form.name.trim(),
         price,
         durationMinutes,
+        description: form.description.trim() || undefined,
         active: form.active,
       },
     };
@@ -132,6 +135,7 @@ const ServicesTab = () => {
       name: service.name,
       price: String(service.price),
       durationMinutes: String(service.durationMinutes),
+      description: service.description ?? "",
       active: service.active,
     });
   };
@@ -224,6 +228,13 @@ const ServicesTab = () => {
               <p className="text-xs text-destructive">{newServiceErrors.durationMinutes}</p>
             )}
           </div>
+          <div className="md:col-span-4">
+            <Input
+              placeholder="Descripcion (opcional)"
+              value={newService.description}
+              onChange={(e) => setNewService((prev) => ({ ...prev, description: e.target.value }))}
+            />
+          </div>
           <div className="flex items-center gap-2">
             <Checkbox
               id="new-service-active"
@@ -293,6 +304,14 @@ const ServicesTab = () => {
                     {isEditing && editingErrors.durationMinutes && (
                       <p className="text-xs text-destructive">{editingErrors.durationMinutes}</p>
                     )}
+                  </div>
+                  <div className="md:col-span-4">
+                    <Input
+                      disabled={!isEditing}
+                      placeholder="Descripcion (opcional)"
+                      value={isEditing ? editingForm.description : service.description ?? ""}
+                      onChange={(e) => setEditingForm((prev) => ({ ...prev, description: e.target.value }))}
+                    />
                   </div>
                   <div className="flex items-center gap-2">
                     <Checkbox

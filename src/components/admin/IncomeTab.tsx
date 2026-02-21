@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { DollarSign } from "lucide-react";
+import { DollarSign, Download } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { getAdminIncome, type IncomeBreakdownItem } from "@/lib/api";
+import { buildCsv, downloadCsv } from "@/lib/csv";
 
 const IncomeTab = () => {
   const [totalIncome, setTotalIncome] = useState(0);
@@ -30,8 +32,31 @@ const IncomeTab = () => {
 
   const formatPrice = (n: number) => `$${n.toLocaleString("es-AR")}`;
 
+  const exportIncomeCsv = () => {
+    const summaryRows: Array<Array<string | number>> = [
+      ["Ingreso total", totalIncome],
+      ["Ingreso del mes", monthlyIncome],
+    ];
+
+    const breakdownRows = breakdown.map((item) => [item.serviceName, item.count, item.total]);
+    const summaryCsv = buildCsv(["Concepto", "Valor"], summaryRows);
+    const breakdownCsv = buildCsv(["Servicio", "Cantidad", "Total"], breakdownRows);
+    const csv = `${summaryCsv}\n\n${breakdownCsv}`;
+
+    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    downloadCsv(`ingresos_${stamp}.csv`, csv);
+    toast.success("CSV de ingresos descargado");
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={exportIncomeCsv}>
+          <Download className="w-4 h-4 mr-2" />
+          Descargar CSV
+        </Button>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-4">
         <div className="glass-card rounded-xl p-6 gold-border-glow">
           <div className="flex items-center gap-3 mb-3">

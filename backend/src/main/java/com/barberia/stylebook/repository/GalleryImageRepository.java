@@ -11,4 +11,8 @@ public interface GalleryImageRepository extends JpaRepository<GalleryImage, UUID
     List<GalleryImage> findAllByActiveTrueOrderBySortOrderAscCreatedAtDesc();
 
     List<GalleryImage> findAllByOrderBySortOrderAscCreatedAtDesc();
+
+    boolean existsBySortOrder(Integer sortOrder);
+
+    boolean existsBySortOrderAndIdNot(Integer sortOrder, UUID id);
 }

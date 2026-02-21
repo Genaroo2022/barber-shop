@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   createAdminGalleryImage,
   deleteAdminGalleryImage,
   listAdminGalleryImages,
@@ -14,15 +24,19 @@ import {
 type GalleryForm = {
   title: string;
   category: string;
-  imageUrl: string;
   sortOrder: string;
   active: boolean;
+};
+
+type GalleryFieldErrors = {
+  title?: string;
+  sortOrder?: string;
+  file?: string;
 };
 
 const emptyForm: GalleryForm = {
   title: "",
   category: "",
-  imageUrl: "",
   sortOrder: "0",
   active: true,
 };
@@ -55,11 +69,15 @@ const GalleryTab = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [newForm, setNewForm] = useState<GalleryForm>(emptyForm);
   const [newFile, setNewFile] = useState<File | null>(null);
+  const [newErrors, setNewErrors] = useState<GalleryFieldErrors>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingForm, setEditingForm] = useState<GalleryForm>(emptyForm);
   const [editingFile, setEditingFile] = useState<File | null>(null);
+  const [editingErrors, setEditingErrors] = useState<GalleryFieldErrors>({});
+  const [deleteTarget, setDeleteTarget] = useState<GalleryImageItem | null>(null);
 
   const sortedImages = useMemo(
     () => [...images].sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title)),
@@ -82,104 +100,148 @@ const GalleryTab = () => {
     fetchImages();
   }, []);
 
-  const parseForm = (form: GalleryForm) => {
-    if (!form.title.trim() || !form.imageUrl.trim()) {
-      throw new Error("Completa titulo e imagen");
+  const validateForm = (
+    form: GalleryForm,
+    options: {
+      requireFile: boolean;
+      selectedFile: File | null;
+      excludeId?: string;
     }
+  ) => {
+    const errors: GalleryFieldErrors = {};
+    if (!form.title.trim()) {
+      errors.title = "Completa el titulo";
+    }
+
     const sortOrder = Number(form.sortOrder);
     if (Number.isNaN(sortOrder) || sortOrder < 0) {
-      throw new Error("El orden debe ser 0 o mayor");
+      errors.sortOrder = "El numero debe ser 0 o mayor";
+    } else {
+      const repeated = images.some((img) => img.sortOrder === sortOrder && img.id !== options.excludeId);
+      if (repeated) {
+        errors.sortOrder = "Ese numero ya esta en uso por otra foto";
+      }
     }
+
+    if (options.requireFile && !options.selectedFile) {
+      errors.file = "Selecciona una imagen";
+    }
+
+    if (errors.title || errors.sortOrder || errors.file) {
+      return { errors, payload: null };
+    }
+
     return {
-      title: form.title.trim(),
-      category: form.category.trim() || undefined,
-      imageUrl: form.imageUrl.trim(),
-      sortOrder,
-      active: form.active,
+      errors: {},
+      payload: {
+        title: form.title.trim(),
+        category: form.category.trim() || undefined,
+        sortOrder,
+        active: form.active,
+      },
     };
   };
 
-  const uploadAndSet = async (file: File, mode: "new" | "edit") => {
-    try {
-      setUploading(true);
-      const url = await uploadToCloudinary(file);
-      if (mode === "new") {
-        setNewForm((prev) => ({ ...prev, imageUrl: url }));
-      } else {
-        setEditingForm((prev) => ({ ...prev, imageUrl: url }));
-      }
-      toast.success("Imagen subida");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Error al subir la imagen";
-      toast.error(message);
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const handleCreate = async () => {
+    const validation = validateForm(newForm, { requireFile: true, selectedFile: newFile });
+    if (!validation.payload) {
+      setNewErrors(validation.errors);
+      toast.error("Revisa los campos marcados en rojo");
+      return;
+    }
+
     try {
       setCreating(true);
-      const uploadedUrl = !newForm.imageUrl.trim() && newFile ? await uploadToCloudinary(newFile) : null;
-      const payload = parseForm({
-        ...newForm,
-        imageUrl: uploadedUrl ?? newForm.imageUrl,
-      });
+      setUploading(true);
+      setNewErrors({});
+      const uploadedUrl = await uploadToCloudinary(newFile as File);
+      const payload = {
+        ...validation.payload,
+        imageUrl: uploadedUrl,
+      };
+
       await createAdminGalleryImage(payload);
       toast.success("Imagen agregada");
       setNewForm(emptyForm);
       setNewFile(null);
+      setNewErrors({});
       fetchImages();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo agregar la imagen";
       toast.error(message);
     } finally {
       setCreating(false);
+      setUploading(false);
     }
   };
 
   const startEdit = (item: GalleryImageItem) => {
     setEditingId(item.id);
     setEditingFile(null);
+    setEditingErrors({});
     setEditingForm({
       title: item.title,
       category: item.category ?? "",
-      imageUrl: item.imageUrl,
       sortOrder: String(item.sortOrder),
       active: item.active,
     });
   };
 
   const handleSaveEdit = async (id: string) => {
+    const currentImage = images.find((img) => img.id === id);
+    if (!currentImage) {
+      toast.error("Imagen no encontrada");
+      return;
+    }
+
+    const validation = validateForm(editingForm, { requireFile: false, selectedFile: editingFile, excludeId: id });
+    if (!validation.payload) {
+      setEditingErrors(validation.errors);
+      toast.error("Revisa los campos marcados en rojo");
+      return;
+    }
+
     try {
-      const uploadedUrl = !editingForm.imageUrl.trim() && editingFile ? await uploadToCloudinary(editingFile) : null;
+      setUploading(true);
+      setEditingErrors({});
+      const uploadedUrl = editingFile ? await uploadToCloudinary(editingFile) : currentImage.imageUrl;
       await updateAdminGalleryImage(
         id,
-        parseForm({
-          ...editingForm,
-          imageUrl: uploadedUrl ?? editingForm.imageUrl,
-        })
+        {
+          ...validation.payload,
+          imageUrl: uploadedUrl,
+        }
       );
       toast.success("Imagen actualizada");
       setEditingId(null);
+      setEditingFile(null);
+      setEditingErrors({});
       fetchImages();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo actualizar";
       toast.error(message);
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Seguro que quieres eliminar esta imagen?")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteAdminGalleryImage(id);
+      setDeleting(true);
+      await deleteAdminGalleryImage(deleteTarget.id);
       toast.success("Imagen eliminada");
+      setDeleteTarget(null);
       fetchImages();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo eliminar";
       toast.error(message);
+    } finally {
+      setDeleting(false);
     }
   };
+
+  const errorClass = (hasError: boolean) => (hasError ? "border-destructive focus-visible:ring-destructive" : "");
 
   if (loading) return <div className="text-muted-foreground">Cargando galeria...</div>;
 
@@ -188,44 +250,52 @@ const GalleryTab = () => {
       <div className="glass-card rounded-xl p-5 space-y-4">
         <h3 className="font-display text-lg font-semibold">Nueva imagen</h3>
         <div className="grid md:grid-cols-2 gap-3">
-          <Input
-            placeholder="Titulo"
-            value={newForm.title}
-            onChange={(e) => setNewForm((prev) => ({ ...prev, title: e.target.value }))}
-          />
+          <div className="space-y-1">
+            <Input
+              placeholder="Titulo"
+              value={newForm.title}
+              onChange={(e) => {
+                setNewForm((prev) => ({ ...prev, title: e.target.value }));
+                setNewErrors((prev) => ({ ...prev, title: undefined }));
+              }}
+              className={errorClass(Boolean(newErrors.title))}
+            />
+            {newErrors.title && <p className="text-xs text-destructive">{newErrors.title}</p>}
+          </div>
           <Input
             placeholder="Categoria (opcional)"
             value={newForm.category}
             onChange={(e) => setNewForm((prev) => ({ ...prev, category: e.target.value }))}
           />
-          <Input
-            placeholder="URL de imagen"
-            value={newForm.imageUrl}
-            onChange={(e) => setNewForm((prev) => ({ ...prev, imageUrl: e.target.value }))}
-          />
-          <Input
-            type="number"
-            min="0"
-            placeholder="Orden"
-            value={newForm.sortOrder}
-            onChange={(e) => setNewForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
-          />
+          <div className="space-y-1">
+            <Input
+              type="number"
+              min="0"
+              placeholder="Numero de foto"
+              value={newForm.sortOrder}
+              onChange={(e) => {
+                setNewForm((prev) => ({ ...prev, sortOrder: e.target.value }));
+                setNewErrors((prev) => ({ ...prev, sortOrder: undefined }));
+              }}
+              className={errorClass(Boolean(newErrors.sortOrder))}
+            />
+            {newErrors.sortOrder && <p className="text-xs text-destructive">{newErrors.sortOrder}</p>}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setNewFile(e.target.files?.[0] ?? null)}
-            className="max-w-sm"
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={!newFile || uploading}
-            onClick={() => newFile && uploadAndSet(newFile, "new")}
-          >
-            {uploading ? "Subiendo..." : "Subir a Cloudinary"}
-          </Button>
+          <div className="space-y-1">
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                setNewFile(e.target.files?.[0] ?? null);
+                setNewErrors((prev) => ({ ...prev, file: undefined }));
+              }}
+              className={`max-w-sm ${errorClass(Boolean(newErrors.file))}`}
+            />
+            {newErrors.file && <p className="text-xs text-destructive">{newErrors.file}</p>}
+          </div>
+          {newFile && <p className="text-xs text-muted-foreground">Archivo seleccionado: {newFile.name}</p>}
           <div className="flex items-center gap-2">
             <Checkbox
               id="new-gallery-active"
@@ -233,12 +303,12 @@ const GalleryTab = () => {
               onCheckedChange={(checked) => setNewForm((prev) => ({ ...prev, active: checked === true }))}
             />
             <label htmlFor="new-gallery-active" className="text-sm text-muted-foreground">
-              Activa
+              Mostrar en la web
             </label>
           </div>
         </div>
         <Button onClick={handleCreate} disabled={creating || uploading}>
-          {creating ? "Guardando..." : "Agregar imagen"}
+          {creating || uploading ? "Guardando..." : "Agregar imagen"}
         </Button>
       </div>
 
@@ -252,13 +322,18 @@ const GalleryTab = () => {
 
             return (
               <div key={item.id} className="glass-card rounded-xl p-4 space-y-3">
-                <img src={isEditing ? form?.imageUrl || item.imageUrl : item.imageUrl} alt={item.title} className="w-full h-48 object-cover rounded-lg" />
+                <img src={item.imageUrl} alt={item.title} className="w-full h-48 object-cover rounded-lg" />
                 <div className="grid gap-2">
                   <Input
                     disabled={!isEditing}
                     value={isEditing ? form?.title || "" : item.title}
-                    onChange={(e) => setEditingForm((prev) => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) => {
+                      setEditingForm((prev) => ({ ...prev, title: e.target.value }));
+                      setEditingErrors((prev) => ({ ...prev, title: undefined }));
+                    }}
+                    className={isEditing ? errorClass(Boolean(editingErrors.title)) : ""}
                   />
+                  {isEditing && editingErrors.title && <p className="text-xs text-destructive">{editingErrors.title}</p>}
                   <Input
                     disabled={!isEditing}
                     value={isEditing ? form?.category || "" : item.category || ""}
@@ -267,16 +342,19 @@ const GalleryTab = () => {
                   />
                   <Input
                     disabled={!isEditing}
-                    value={isEditing ? form?.imageUrl || "" : item.imageUrl}
-                    onChange={(e) => setEditingForm((prev) => ({ ...prev, imageUrl: e.target.value }))}
-                  />
-                  <Input
-                    disabled={!isEditing}
                     type="number"
                     min="0"
                     value={isEditing ? form?.sortOrder || "0" : String(item.sortOrder)}
-                    onChange={(e) => setEditingForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
+                    placeholder="Numero de foto"
+                    onChange={(e) => {
+                      setEditingForm((prev) => ({ ...prev, sortOrder: e.target.value }));
+                      setEditingErrors((prev) => ({ ...prev, sortOrder: undefined }));
+                    }}
+                    className={isEditing ? errorClass(Boolean(editingErrors.sortOrder)) : ""}
                   />
+                  {isEditing && editingErrors.sortOrder && (
+                    <p className="text-xs text-destructive">{editingErrors.sortOrder}</p>
+                  )}
                 </div>
 
                 {isEditing && (
@@ -287,14 +365,9 @@ const GalleryTab = () => {
                       onChange={(e) => setEditingFile(e.target.files?.[0] ?? null)}
                       className="max-w-sm"
                     />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={!editingFile || uploading}
-                      onClick={() => editingFile && uploadAndSet(editingFile, "edit")}
-                    >
-                      {uploading ? "Subiendo..." : "Subir nueva imagen"}
-                    </Button>
+                    {editingFile && (
+                      <p className="text-xs text-muted-foreground">Archivo seleccionado: {editingFile.name}</p>
+                    )}
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id={`gallery-active-${item.id}`}
@@ -304,7 +377,7 @@ const GalleryTab = () => {
                         }
                       />
                       <label htmlFor={`gallery-active-${item.id}`} className="text-sm text-muted-foreground">
-                        Activa
+                        Mostrar en la web
                       </label>
                     </div>
                   </div>
@@ -316,7 +389,15 @@ const GalleryTab = () => {
                       <Button size="sm" onClick={() => handleSaveEdit(item.id)}>
                         Guardar
                       </Button>
-                      <Button size="sm" variant="secondary" onClick={() => setEditingId(null)}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setEditingId(null);
+                          setEditingFile(null);
+                          setEditingErrors({});
+                        }}
+                      >
                         Cancelar
                       </Button>
                     </>
@@ -325,7 +406,7 @@ const GalleryTab = () => {
                       Editar
                     </Button>
                   )}
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)}>
+                  <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(item)}>
                     Eliminar
                   </Button>
                 </div>
@@ -334,6 +415,28 @@ const GalleryTab = () => {
           })
         )}
       </div>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="glass-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar imagen</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta accion eliminara la foto
+              {deleteTarget ? ` "${deleteTarget.title}"` : ""} de la galeria.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

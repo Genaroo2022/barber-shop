@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   createAdminService,
   deleteAdminService,
   listAdminServices,
@@ -18,6 +28,12 @@ type ServiceForm = {
   active: boolean;
 };
 
+type ServiceFormErrors = {
+  name?: string;
+  price?: string;
+  durationMinutes?: string;
+};
+
 const emptyForm: ServiceForm = {
   name: "",
   price: "",
@@ -29,9 +45,13 @@ const ServicesTab = () => {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [newService, setNewService] = useState<ServiceForm>(emptyForm);
+  const [newServiceErrors, setNewServiceErrors] = useState<ServiceFormErrors>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingForm, setEditingForm] = useState<ServiceForm>(emptyForm);
+  const [editingErrors, setEditingErrors] = useState<ServiceFormErrors>({});
+  const [deleteTarget, setDeleteTarget] = useState<ServiceItem | null>(null);
 
   const fetchServices = async () => {
     try {
@@ -49,26 +69,53 @@ const ServicesTab = () => {
     fetchServices();
   }, []);
 
-  const parsePayload = (form: ServiceForm) => {
-    const price = Number(form.price);
-    const durationMinutes = Number(form.durationMinutes);
-    if (!form.name.trim() || Number.isNaN(price) || Number.isNaN(durationMinutes)) {
-      throw new Error("Completa nombre, precio y duracion");
+  const validateServiceForm = (form: ServiceForm) => {
+    const errors: ServiceFormErrors = {};
+
+    if (!form.name.trim()) {
+      errors.name = "Completa el nombre";
     }
+
+    const price = Number(form.price);
+    if (form.price.trim() === "" || Number.isNaN(price) || price < 0) {
+      errors.price = "Ingresa un precio valido (0 o mayor)";
+    }
+
+    const durationMinutes = Number(form.durationMinutes);
+    if (form.durationMinutes.trim() === "" || Number.isNaN(durationMinutes) || durationMinutes < 1) {
+      errors.durationMinutes = "Ingresa una duracion valida (1 o mayor)";
+    }
+
+    if (errors.name || errors.price || errors.durationMinutes) {
+      return { errors, payload: null };
+    }
+
     return {
-      name: form.name.trim(),
-      price,
-      durationMinutes,
-      active: form.active,
+      errors: {},
+      payload: {
+        name: form.name.trim(),
+        price,
+        durationMinutes,
+        active: form.active,
+      },
     };
   };
 
   const handleCreate = async () => {
+    const validation = validateServiceForm(newService);
+    if (!validation.payload) {
+      setNewServiceErrors(validation.errors);
+      toast.error("Revisa los campos marcados en rojo");
+      return;
+    }
+
     try {
       setCreating(true);
-      await createAdminService(parsePayload(newService));
+      setNewServiceErrors({});
+      await createAdminService(validation.payload);
       toast.success("Servicio creado");
       setNewService(emptyForm);
+      setNewServiceErrors({});
       fetchServices();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo crear el servicio";
@@ -80,6 +127,7 @@ const ServicesTab = () => {
 
   const startEdit = (service: ServiceItem) => {
     setEditingId(service.id);
+    setEditingErrors({});
     setEditingForm({
       name: service.name,
       price: String(service.price),
@@ -89,10 +137,19 @@ const ServicesTab = () => {
   };
 
   const handleUpdate = async (id: string) => {
+    const validation = validateServiceForm(editingForm);
+    if (!validation.payload) {
+      setEditingErrors(validation.errors);
+      toast.error("Revisa los campos marcados en rojo");
+      return;
+    }
+
     try {
-      await updateAdminService(id, parsePayload(editingForm));
+      setEditingErrors({});
+      await updateAdminService(id, validation.payload);
       toast.success("Servicio actualizado");
       setEditingId(null);
+      setEditingErrors({});
       fetchServices();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo actualizar el servicio";
@@ -100,17 +157,23 @@ const ServicesTab = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Seguro que quieres eliminar este servicio?")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteAdminService(id);
+      setDeleting(true);
+      await deleteAdminService(deleteTarget.id);
       toast.success("Servicio eliminado");
+      setDeleteTarget(null);
       fetchServices();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo eliminar el servicio";
       toast.error(message);
+    } finally {
+      setDeleting(false);
     }
   };
+
+  const errorClass = (hasError: boolean) => (hasError ? "border-destructive focus-visible:ring-destructive" : "");
 
   if (loading) return <div className="text-muted-foreground">Cargando servicios...</div>;
 
@@ -119,25 +182,48 @@ const ServicesTab = () => {
       <div className="glass-card rounded-xl p-5 space-y-4">
         <h3 className="font-display text-lg font-semibold">Nuevo servicio</h3>
         <div className="grid md:grid-cols-4 gap-3">
-          <Input
-            placeholder="Nombre"
-            value={newService.name}
-            onChange={(e) => setNewService((prev) => ({ ...prev, name: e.target.value }))}
-          />
-          <Input
-            placeholder="Precio"
-            type="number"
-            min="0"
-            value={newService.price}
-            onChange={(e) => setNewService((prev) => ({ ...prev, price: e.target.value }))}
-          />
-          <Input
-            placeholder="Duracion (min)"
-            type="number"
-            min="1"
-            value={newService.durationMinutes}
-            onChange={(e) => setNewService((prev) => ({ ...prev, durationMinutes: e.target.value }))}
-          />
+          <div className="space-y-1">
+            <Input
+              placeholder="Nombre"
+              value={newService.name}
+              onChange={(e) => {
+                setNewService((prev) => ({ ...prev, name: e.target.value }));
+                setNewServiceErrors((prev) => ({ ...prev, name: undefined }));
+              }}
+              className={errorClass(Boolean(newServiceErrors.name))}
+            />
+            {newServiceErrors.name && <p className="text-xs text-destructive">{newServiceErrors.name}</p>}
+          </div>
+          <div className="space-y-1">
+            <Input
+              placeholder="Precio"
+              type="number"
+              min="0"
+              value={newService.price}
+              onChange={(e) => {
+                setNewService((prev) => ({ ...prev, price: e.target.value }));
+                setNewServiceErrors((prev) => ({ ...prev, price: undefined }));
+              }}
+              className={errorClass(Boolean(newServiceErrors.price))}
+            />
+            {newServiceErrors.price && <p className="text-xs text-destructive">{newServiceErrors.price}</p>}
+          </div>
+          <div className="space-y-1">
+            <Input
+              placeholder="Duracion (min)"
+              type="number"
+              min="1"
+              value={newService.durationMinutes}
+              onChange={(e) => {
+                setNewService((prev) => ({ ...prev, durationMinutes: e.target.value }));
+                setNewServiceErrors((prev) => ({ ...prev, durationMinutes: undefined }));
+              }}
+              className={errorClass(Boolean(newServiceErrors.durationMinutes))}
+            />
+            {newServiceErrors.durationMinutes && (
+              <p className="text-xs text-destructive">{newServiceErrors.durationMinutes}</p>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Checkbox
               id="new-service-active"
@@ -164,25 +250,50 @@ const ServicesTab = () => {
             return (
               <div key={service.id} className="border border-border/60 rounded-lg p-4 space-y-3">
                 <div className="grid md:grid-cols-4 gap-3">
-                  <Input
-                    disabled={!isEditing}
-                    value={isEditing ? editingForm.name : service.name}
-                    onChange={(e) => setEditingForm((prev) => ({ ...prev, name: e.target.value }))}
-                  />
-                  <Input
-                    disabled={!isEditing}
-                    type="number"
-                    min="0"
-                    value={isEditing ? editingForm.price : String(service.price)}
-                    onChange={(e) => setEditingForm((prev) => ({ ...prev, price: e.target.value }))}
-                  />
-                  <Input
-                    disabled={!isEditing}
-                    type="number"
-                    min="1"
-                    value={isEditing ? editingForm.durationMinutes : String(service.durationMinutes)}
-                    onChange={(e) => setEditingForm((prev) => ({ ...prev, durationMinutes: e.target.value }))}
-                  />
+                  <div className="space-y-1">
+                    <Input
+                      disabled={!isEditing}
+                      value={isEditing ? editingForm.name : service.name}
+                      onChange={(e) => {
+                        setEditingForm((prev) => ({ ...prev, name: e.target.value }));
+                        setEditingErrors((prev) => ({ ...prev, name: undefined }));
+                      }}
+                      className={isEditing ? errorClass(Boolean(editingErrors.name)) : ""}
+                    />
+                    {isEditing && editingErrors.name && <p className="text-xs text-destructive">{editingErrors.name}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <Input
+                      disabled={!isEditing}
+                      type="number"
+                      min="0"
+                      value={isEditing ? editingForm.price : String(service.price)}
+                      onChange={(e) => {
+                        setEditingForm((prev) => ({ ...prev, price: e.target.value }));
+                        setEditingErrors((prev) => ({ ...prev, price: undefined }));
+                      }}
+                      className={isEditing ? errorClass(Boolean(editingErrors.price)) : ""}
+                    />
+                    {isEditing && editingErrors.price && (
+                      <p className="text-xs text-destructive">{editingErrors.price}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Input
+                      disabled={!isEditing}
+                      type="number"
+                      min="1"
+                      value={isEditing ? editingForm.durationMinutes : String(service.durationMinutes)}
+                      onChange={(e) => {
+                        setEditingForm((prev) => ({ ...prev, durationMinutes: e.target.value }));
+                        setEditingErrors((prev) => ({ ...prev, durationMinutes: undefined }));
+                      }}
+                      className={isEditing ? errorClass(Boolean(editingErrors.durationMinutes)) : ""}
+                    />
+                    {isEditing && editingErrors.durationMinutes && (
+                      <p className="text-xs text-destructive">{editingErrors.durationMinutes}</p>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id={`service-active-${service.id}`}
@@ -201,7 +312,14 @@ const ServicesTab = () => {
                       <Button size="sm" onClick={() => handleUpdate(service.id)}>
                         Guardar
                       </Button>
-                      <Button size="sm" variant="secondary" onClick={() => setEditingId(null)}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setEditingId(null);
+                          setEditingErrors({});
+                        }}
+                      >
                         Cancelar
                       </Button>
                     </>
@@ -210,7 +328,7 @@ const ServicesTab = () => {
                       Editar
                     </Button>
                   )}
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(service.id)}>
+                  <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(service)}>
                     Eliminar
                   </Button>
                 </div>
@@ -219,6 +337,28 @@ const ServicesTab = () => {
           })
         )}
       </div>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="glass-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar servicio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta accion eliminara el servicio
+              {deleteTarget ? ` "${deleteTarget.name}"` : ""}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -59,6 +59,18 @@ const BookingForm = () => {
     [services, serviceId]
   );
 
+  const getBookingErrorMessage = (err: unknown): string => {
+    const fallback = "Error al reservar";
+    if (!(err instanceof Error)) return fallback;
+
+    const normalized = err.message.toLowerCase();
+    if (normalized.includes("ya existe un turno para ese servicio en esa fecha/hora")) {
+      return "Ese horario ya fue tomado para el servicio seleccionado. Elegi otro horario para evitar doble reserva.";
+    }
+
+    return err.message || fallback;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !phone || !serviceId || !date || !time) {
@@ -79,8 +91,7 @@ const BookingForm = () => {
       setSubmitted(true);
       toast.success("Turno reservado con exito");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Error al reservar";
-      toast.error(message);
+      toast.error(getBookingErrorMessage(err));
     } finally {
       setLoading(false);
     }

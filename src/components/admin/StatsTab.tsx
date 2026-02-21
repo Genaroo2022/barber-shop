@@ -1,22 +1,35 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Users, TrendingUp, Scissors } from "lucide-react";
+import { CalendarDays, DollarSign, Scissors, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { getAdminOverview } from "@/lib/api";
+import { getAdminIncome, listAdminAppointments } from "@/lib/api";
 
 const StatsTab = () => {
   const [stats, setStats] = useState({
-    totalAppointments: 0,
-    pendingAppointments: 0,
+    monthlyAppointments: 0,
     completedAppointments: 0,
-    uniqueClients: 0,
-    popularService: "-",
+    cancelledAppointments: 0,
+    monthlyIncome: 0,
   });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const data = await getAdminOverview();
-        setStats(data);
+        const [appointments, income] = await Promise.all([listAdminAppointments(), getAdminIncome()]);
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+
+        const monthlyAppointments = appointments.filter((appointment) => {
+          const date = new Date(appointment.appointmentAt);
+          return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
+        });
+
+        setStats({
+          monthlyAppointments: monthlyAppointments.length,
+          completedAppointments: appointments.filter((a) => a.status === "COMPLETED").length,
+          cancelledAppointments: appointments.filter((a) => a.status === "CANCELLED").length,
+          monthlyIncome: Number(income.monthlyIncome) || 0,
+        });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Error al cargar estadisticas";
         toast.error(message);
@@ -26,10 +39,15 @@ const StatsTab = () => {
   }, []);
 
   const cards = [
-    { label: "Total Turnos", value: stats.totalAppointments, icon: CalendarDays, color: "text-primary" },
-    { label: "Pendientes", value: stats.pendingAppointments, icon: TrendingUp, color: "text-yellow-500" },
+    { label: "Turnos del mes", value: stats.monthlyAppointments, icon: CalendarDays, color: "text-primary" },
     { label: "Completados", value: stats.completedAppointments, icon: Scissors, color: "text-green-500" },
-    { label: "Clientes Unicos", value: stats.uniqueClients, icon: Users, color: "text-blue-400" },
+    { label: "Cancelados", value: stats.cancelledAppointments, icon: XCircle, color: "text-red-500" },
+    {
+      label: "Ingreso mensual",
+      value: `$${stats.monthlyIncome.toLocaleString("es-AR")}`,
+      icon: DollarSign,
+      color: "text-emerald-500",
+    },
   ];
 
   return (
@@ -44,11 +62,6 @@ const StatsTab = () => {
             <p className="text-3xl font-display font-bold">{card.value}</p>
           </div>
         ))}
-      </div>
-
-      <div className="glass-card rounded-xl p-6">
-        <h3 className="font-display font-semibold mb-2">Servicio mas popular</h3>
-        <p className="text-2xl font-display font-bold gold-text">{stats.popularService}</p>
       </div>
     </div>
   );

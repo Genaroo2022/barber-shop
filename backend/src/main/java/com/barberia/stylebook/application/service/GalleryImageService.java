@@ -1,5 +1,6 @@
 package com.barberia.stylebook.application.service;
 
+import com.barberia.stylebook.application.exception.BusinessRuleException;
 import com.barberia.stylebook.application.exception.NotFoundException;
 import com.barberia.stylebook.domain.entity.GalleryImage;
 import com.barberia.stylebook.repository.GalleryImageRepository;
@@ -62,11 +63,23 @@ public class GalleryImageService {
         String normalizedCategory = request.category() == null ? null : request.category().trim();
         String normalizedUrl = request.imageUrl().trim();
 
+        validateUniqueSortOrder(request.sortOrder(), image.getId());
+
         image.setTitle(normalizedTitle);
         image.setCategory((normalizedCategory == null || normalizedCategory.isEmpty()) ? null : normalizedCategory);
         image.setImageUrl(normalizedUrl);
         image.setSortOrder(request.sortOrder());
         image.setActive(request.active());
+    }
+
+    private void validateUniqueSortOrder(Integer sortOrder, UUID imageId) {
+        boolean sortOrderTaken = imageId == null
+                ? galleryImageRepository.existsBySortOrder(sortOrder)
+                : galleryImageRepository.existsBySortOrderAndIdNot(sortOrder, imageId);
+
+        if (sortOrderTaken) {
+            throw new BusinessRuleException("Ese numero de orden ya esta en uso por otra foto");
+        }
     }
 
     private GalleryImageResponse toResponse(GalleryImage image) {

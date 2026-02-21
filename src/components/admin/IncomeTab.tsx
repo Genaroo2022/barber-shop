@@ -2,46 +2,242 @@ import { useEffect, useState } from "react";
 import { DollarSign, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { getAdminIncome, type IncomeBreakdownItem } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  createAdminManualIncome,
+  deleteAdminManualIncome,
+  getAdminIncome,
+  updateAdminManualIncome,
+  type IncomeBreakdownItem,
+  type ManualIncomeEntry,
+} from "@/lib/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { buildCsv, downloadCsv } from "@/lib/csv";
 
+type ManualIncomeErrors = {
+  amount?: string;
+  tipAmount?: string;
+  occurredOn?: string;
+};
+
+type ManualIncomeForm = {
+  amount: string;
+  tipAmount: string;
+  occurredOn: string;
+  notes: string;
+};
+
+const emptyManualForm = (): ManualIncomeForm => ({
+  amount: "",
+  tipAmount: "",
+  occurredOn: new Date().toISOString().slice(0, 10),
+  notes: "",
+});
+
 const IncomeTab = () => {
+  const [registeredIncome, setRegisteredIncome] = useState(0);
+  const [manualIncome, setManualIncome] = useState(0);
+  const [totalTips, setTotalTips] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [breakdown, setBreakdown] = useState<IncomeBreakdownItem[]>([]);
+  const [manualEntries, setManualEntries] = useState<ManualIncomeEntry[]>([]);
+
+  const [savingManualIncome, setSavingManualIncome] = useState(false);
+  const [updatingManualIncome, setUpdatingManualIncome] = useState(false);
+  const [deletingManualIncome, setDeletingManualIncome] = useState(false);
+
+  const [manualForm, setManualForm] = useState<ManualIncomeForm>(emptyManualForm);
+  const [manualErrors, setManualErrors] = useState<ManualIncomeErrors>({});
+
+  const [editingEntry, setEditingEntry] = useState<ManualIncomeEntry | null>(null);
+  const [editingForm, setEditingForm] = useState<ManualIncomeForm>(emptyManualForm);
+  const [editingErrors, setEditingErrors] = useState<ManualIncomeErrors>({});
+
+  const [deleteTarget, setDeleteTarget] = useState<ManualIncomeEntry | null>(null);
+
+  const fetchIncome = async () => {
+    try {
+      const data = await getAdminIncome();
+      setRegisteredIncome(Number(data.registeredIncome) || 0);
+      setManualIncome(Number(data.manualIncome) || 0);
+      setTotalTips(Number(data.totalTips) || 0);
+      setTotalIncome(Number(data.totalIncome) || 0);
+      setMonthlyIncome(Number(data.monthlyIncome) || 0);
+      setBreakdown(
+        data.breakdown.map((item) => ({
+          ...item,
+          total: Number(item.total) || 0,
+        }))
+      );
+      setManualEntries(
+        data.manualEntries.map((entry) => ({
+          ...entry,
+          amount: Number(entry.amount) || 0,
+          tipAmount: Number(entry.tipAmount) || 0,
+          total: Number(entry.total) || 0,
+        }))
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error al cargar ingresos";
+      toast.error(message);
+    }
+  };
 
   useEffect(() => {
-    const fetchIncome = async () => {
-      try {
-        const data = await getAdminIncome();
-        setTotalIncome(Number(data.totalIncome) || 0);
-        setMonthlyIncome(Number(data.monthlyIncome) || 0);
-        setBreakdown(
-          data.breakdown.map((item) => ({
-            ...item,
-            total: Number(item.total) || 0,
-          }))
-        );
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Error al cargar ingresos";
-        toast.error(message);
-      }
-    };
     fetchIncome();
   }, []);
 
   const formatPrice = (n: number) => `$${n.toLocaleString("es-AR")}`;
+  const errorClass = (hasError: boolean) => (hasError ? "border-destructive focus-visible:ring-destructive" : "");
+
+  const validateManualIncome = (form: ManualIncomeForm) => {
+    const errors: ManualIncomeErrors = {};
+    const amount = form.amount.trim() === "" ? 0 : Number(form.amount);
+    const tipAmount = form.tipAmount.trim() === "" ? 0 : Number(form.tipAmount);
+
+    if (Number.isNaN(amount) || amount < 0) {
+      errors.amount = "Completa un monto valido (0 o mayor)";
+    }
+    if (Number.isNaN(tipAmount) || tipAmount < 0) {
+      errors.tipAmount = "La propina debe ser 0 o mayor";
+    }
+    if (!form.occurredOn) {
+      errors.occurredOn = "Selecciona una fecha";
+    }
+    if (amount + tipAmount <= 0) {
+      errors.amount = "Ingresa un monto o una propina";
+    }
+
+    if (errors.amount || errors.tipAmount || errors.occurredOn) {
+      return { errors, payload: null };
+    }
+
+    return {
+      errors: {},
+      payload: {
+        amount,
+        tipAmount,
+        occurredOn: form.occurredOn,
+        notes: form.notes.trim() || undefined,
+      },
+    };
+  };
+
+  const handleAddManualIncome = async () => {
+    const validation = validateManualIncome(manualForm);
+    if (!validation.payload) {
+      setManualErrors(validation.errors);
+      toast.error("Revisa los campos marcados en rojo");
+      return;
+    }
+
+    try {
+      setSavingManualIncome(true);
+      setManualErrors({});
+      await createAdminManualIncome(validation.payload);
+      toast.success("Ingreso manual guardado");
+      setManualForm(emptyManualForm());
+      await fetchIncome();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "No se pudo guardar";
+      toast.error(message);
+    } finally {
+      setSavingManualIncome(false);
+    }
+  };
+
+  const startEditManualIncome = (entry: ManualIncomeEntry) => {
+    setEditingEntry(entry);
+    setEditingErrors({});
+    setEditingForm({
+      amount: entry.amount.toString(),
+      tipAmount: entry.tipAmount.toString(),
+      occurredOn: entry.occurredOn,
+      notes: entry.notes ?? "",
+    });
+  };
+
+  const handleUpdateManualIncome = async () => {
+    if (!editingEntry) return;
+
+    const validation = validateManualIncome(editingForm);
+    if (!validation.payload) {
+      setEditingErrors(validation.errors);
+      toast.error("Revisa los campos marcados en rojo");
+      return;
+    }
+
+    try {
+      setUpdatingManualIncome(true);
+      setEditingErrors({});
+      await updateAdminManualIncome(editingEntry.id, validation.payload);
+      toast.success("Ingreso actualizado");
+      setEditingEntry(null);
+      await fetchIncome();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "No se pudo actualizar";
+      toast.error(message);
+    } finally {
+      setUpdatingManualIncome(false);
+    }
+  };
+
+  const handleDeleteManualIncome = async () => {
+    if (!deleteTarget) return;
+    try {
+      setDeletingManualIncome(true);
+      await deleteAdminManualIncome(deleteTarget.id);
+      toast.success("Ingreso eliminado");
+      setDeleteTarget(null);
+      await fetchIncome();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "No se pudo eliminar";
+      toast.error(message);
+    } finally {
+      setDeletingManualIncome(false);
+    }
+  };
 
   const exportIncomeCsv = () => {
     const summaryRows: Array<Array<string | number>> = [
+      ["Ingreso registrado (turnos)", registeredIncome],
+      ["Ingresos manuales", manualIncome],
+      ["Propinas", totalTips],
       ["Ingreso total", totalIncome],
       ["Ingreso del mes", monthlyIncome],
     ];
 
     const breakdownRows = breakdown.map((item) => [item.serviceName, item.count, item.total]);
+    const manualRows = manualEntries.map((entry) => [
+      entry.occurredOn,
+      entry.amount,
+      entry.tipAmount,
+      entry.total,
+      entry.notes ?? "",
+    ]);
     const summaryCsv = buildCsv(["Concepto", "Valor"], summaryRows);
     const breakdownCsv = buildCsv(["Servicio", "Cantidad", "Total"], breakdownRows);
-    const csv = `${summaryCsv}\n\n${breakdownCsv}`;
+    const manualCsv = buildCsv(["Fecha", "Monto", "Propina", "Total", "Notas"], manualRows);
+    const csv = `${summaryCsv}\n\n${breakdownCsv}\n\n${manualCsv}`;
 
     const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     downloadCsv(`ingresos_${stamp}.csv`, csv);
@@ -53,11 +249,11 @@ const IncomeTab = () => {
       <div className="flex justify-end">
         <Button variant="outline" size="sm" onClick={exportIncomeCsv}>
           <Download className="w-4 h-4 mr-2" />
-          Descargar CSV
+          Descargar
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-card rounded-xl p-6 gold-border-glow">
           <div className="flex items-center gap-3 mb-3">
             <DollarSign className="w-5 h-5 text-primary" />
@@ -72,10 +268,80 @@ const IncomeTab = () => {
           </div>
           <p className="text-3xl font-display font-bold">{formatPrice(monthlyIncome)}</p>
         </div>
+        <div className="glass-card rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <DollarSign className="w-5 h-5 text-blue-400" />
+            <span className="text-sm text-muted-foreground">Ingresos manuales</span>
+          </div>
+          <p className="text-3xl font-display font-bold">{formatPrice(manualIncome)}</p>
+        </div>
+        <div className="glass-card rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <DollarSign className="w-5 h-5 text-amber-400" />
+            <span className="text-sm text-muted-foreground">Propinas</span>
+          </div>
+          <p className="text-3xl font-display font-bold">{formatPrice(totalTips)}</p>
+        </div>
+      </div>
+
+      <div className="glass-card rounded-xl p-6 space-y-4">
+        <h3 className="font-display font-semibold">Cargar ingreso manual</h3>
+        <div className="grid md:grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Monto del corte"
+              value={manualForm.amount}
+              onChange={(e) => {
+                setManualForm((prev) => ({ ...prev, amount: e.target.value }));
+                setManualErrors((prev) => ({ ...prev, amount: undefined }));
+              }}
+              className={errorClass(Boolean(manualErrors.amount))}
+            />
+            {manualErrors.amount && <p className="text-xs text-destructive">{manualErrors.amount}</p>}
+          </div>
+          <div className="space-y-1">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Propina"
+              value={manualForm.tipAmount}
+              onChange={(e) => {
+                setManualForm((prev) => ({ ...prev, tipAmount: e.target.value }));
+                setManualErrors((prev) => ({ ...prev, tipAmount: undefined }));
+              }}
+              className={errorClass(Boolean(manualErrors.tipAmount))}
+            />
+            {manualErrors.tipAmount && <p className="text-xs text-destructive">{manualErrors.tipAmount}</p>}
+          </div>
+          <div className="space-y-1">
+            <Input
+              type="date"
+              value={manualForm.occurredOn}
+              onChange={(e) => {
+                setManualForm((prev) => ({ ...prev, occurredOn: e.target.value }));
+                setManualErrors((prev) => ({ ...prev, occurredOn: undefined }));
+              }}
+              className={errorClass(Boolean(manualErrors.occurredOn))}
+            />
+            {manualErrors.occurredOn && <p className="text-xs text-destructive">{manualErrors.occurredOn}</p>}
+          </div>
+        </div>
+        <Textarea
+          placeholder="Notas (opcional)"
+          value={manualForm.notes}
+          onChange={(e) => setManualForm((prev) => ({ ...prev, notes: e.target.value }))}
+        />
+        <Button onClick={handleAddManualIncome} disabled={savingManualIncome}>
+          {savingManualIncome ? "Guardando..." : "Agregar ingreso"}
+        </Button>
       </div>
 
       <div className="glass-card rounded-xl p-6">
-        <h3 className="font-display font-semibold mb-4">Desglose por servicio</h3>
+        <h3 className="font-display font-semibold mb-4">Desglose de ingresos</h3>
         {breakdown.length === 0 ? (
           <p className="text-muted-foreground text-sm">No hay ingresos registrados</p>
         ) : (
@@ -87,7 +353,7 @@ const IncomeTab = () => {
               >
                 <div>
                   <p className="font-medium text-sm">{item.serviceName}</p>
-                  <p className="text-xs text-muted-foreground">{item.count} servicios realizados</p>
+                  <p className="text-xs text-muted-foreground">{item.count} registros</p>
                 </div>
                 <p className="font-display font-semibold gold-text">{formatPrice(item.total)}</p>
               </div>
@@ -95,6 +361,128 @@ const IncomeTab = () => {
           </div>
         )}
       </div>
+
+      <div className="glass-card rounded-xl p-6">
+        <h3 className="font-display font-semibold mb-4">Ingresos manuales cargados</h3>
+        {manualEntries.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Todavia no cargaste ingresos manuales</p>
+        ) : (
+          <div className="space-y-3">
+            {manualEntries.map((entry) => (
+              <div
+                key={entry.id}
+                className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
+              >
+                <div>
+                  <p className="font-medium text-sm">{entry.occurredOn}</p>
+                  <p className="text-xs text-muted-foreground">{entry.notes || "Sin notas"}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-display font-semibold gold-text">{formatPrice(entry.total)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Monto {formatPrice(entry.amount)} | Propina {formatPrice(entry.tipAmount)}
+                  </p>
+                  <div className="flex justify-end gap-2 mt-2">
+                    <Button size="sm" variant="secondary" onClick={() => startEditManualIncome(entry)}>
+                      Editar
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(entry)}>
+                      Eliminar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={Boolean(editingEntry)} onOpenChange={(open) => !open && setEditingEntry(null)}>
+        <DialogContent className="glass-card border-border">
+          <DialogHeader>
+            <DialogTitle>Editar ingreso manual</DialogTitle>
+            <DialogDescription>Actualiza monto, propina, fecha o nota.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="space-y-1">
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Monto del corte"
+                value={editingForm.amount}
+                onChange={(e) => {
+                  setEditingForm((prev) => ({ ...prev, amount: e.target.value }));
+                  setEditingErrors((prev) => ({ ...prev, amount: undefined }));
+                }}
+                className={errorClass(Boolean(editingErrors.amount))}
+              />
+              {editingErrors.amount && <p className="text-xs text-destructive">{editingErrors.amount}</p>}
+            </div>
+            <div className="space-y-1">
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Propina"
+                value={editingForm.tipAmount}
+                onChange={(e) => {
+                  setEditingForm((prev) => ({ ...prev, tipAmount: e.target.value }));
+                  setEditingErrors((prev) => ({ ...prev, tipAmount: undefined }));
+                }}
+                className={errorClass(Boolean(editingErrors.tipAmount))}
+              />
+              {editingErrors.tipAmount && <p className="text-xs text-destructive">{editingErrors.tipAmount}</p>}
+            </div>
+            <div className="space-y-1">
+              <Input
+                type="date"
+                value={editingForm.occurredOn}
+                onChange={(e) => {
+                  setEditingForm((prev) => ({ ...prev, occurredOn: e.target.value }));
+                  setEditingErrors((prev) => ({ ...prev, occurredOn: undefined }));
+                }}
+                className={errorClass(Boolean(editingErrors.occurredOn))}
+              />
+              {editingErrors.occurredOn && <p className="text-xs text-destructive">{editingErrors.occurredOn}</p>}
+            </div>
+            <Textarea
+              placeholder="Notas (opcional)"
+              value={editingForm.notes}
+              onChange={(e) => setEditingForm((prev) => ({ ...prev, notes: e.target.value }))}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setEditingEntry(null)} disabled={updatingManualIncome}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateManualIncome} disabled={updatingManualIncome}>
+              {updatingManualIncome ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="glass-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar ingreso manual</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta accion eliminara el ingreso de {deleteTarget?.occurredOn}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingManualIncome}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteManualIncome}
+              disabled={deletingManualIncome}
+            >
+              {deletingManualIncome ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

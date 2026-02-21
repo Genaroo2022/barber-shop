@@ -92,7 +92,7 @@ const AppointmentsTab = () => {
       <div className="flex justify-end">
         <Button variant="outline" size="sm" onClick={exportAppointmentsCsv}>
           <Download className="w-4 h-4 mr-2" />
-          Descargar CSV
+          Descargar
         </Button>
       </div>
 

@@ -101,9 +101,22 @@ export type IncomeBreakdownItem = {
 };
 
 export type IncomeMetrics = {
+  registeredIncome: number;
+  manualIncome: number;
+  totalTips: number;
   totalIncome: number;
   monthlyIncome: number;
   breakdown: IncomeBreakdownItem[];
+  manualEntries: ManualIncomeEntry[];
+};
+
+export type ManualIncomeEntry = {
+  id: string;
+  amount: number;
+  tipAmount: number;
+  total: number;
+  occurredOn: string;
+  notes?: string | null;
 };
 
 export type LoginResponse = {
@@ -158,6 +171,42 @@ export async function getAdminOverview(): Promise<OverviewMetrics> {
 
 export async function getAdminIncome(): Promise<IncomeMetrics> {
   return apiRequest<IncomeMetrics>("/api/admin/metrics/income", { auth: true });
+}
+
+export async function createAdminManualIncome(payload: {
+  amount: number;
+  tipAmount: number;
+  occurredOn: string;
+  notes?: string;
+}): Promise<ManualIncomeEntry> {
+  return apiRequest<ManualIncomeEntry>("/api/admin/metrics/income/manual", {
+    method: "POST",
+    body: payload,
+    auth: true,
+  });
+}
+
+export async function updateAdminManualIncome(
+  id: string,
+  payload: {
+    amount: number;
+    tipAmount: number;
+    occurredOn: string;
+    notes?: string;
+  }
+): Promise<ManualIncomeEntry> {
+  return apiRequest<ManualIncomeEntry>(`/api/admin/metrics/income/manual/${id}`, {
+    method: "PUT",
+    body: payload,
+    auth: true,
+  });
+}
+
+export async function deleteAdminManualIncome(id: string): Promise<void> {
+  await apiRequest<null>(`/api/admin/metrics/income/manual/${id}`, {
+    method: "DELETE",
+    auth: true,
+  });
 }
 
 export async function listAdminServices(): Promise<ServiceItem[]> {

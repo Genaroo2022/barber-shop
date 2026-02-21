@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Download, X } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { listAdminAppointments, updateAdminAppointmentStatus, type AppointmentItem } from "@/lib/api";
 import { buildCsv, downloadCsv } from "@/lib/csv";
 import { clearAccessToken } from "@/lib/auth";
+import { getCurrentMonthKey, isInMonth, monthKeyForFilename } from "@/lib/month";
 
 const statusColors: Record<AppointmentItem["status"], string> = {
   PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
@@ -27,6 +29,7 @@ const statusLabels: Record<AppointmentItem["status"], string> = {
 const AppointmentsTab = () => {
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
 
   const fetchAppointments = async () => {
     try {
@@ -47,6 +50,11 @@ const AppointmentsTab = () => {
     fetchAppointments();
   }, []);
 
+  const filteredAppointments = useMemo(
+    () => appointments.filter((appointment) => isInMonth(appointment.appointmentAt, selectedMonth)),
+    [appointments, selectedMonth]
+  );
+
   const updateStatus = async (id: string, status: AppointmentItem["status"]) => {
     try {
       await updateAdminAppointmentStatus(id, status);
@@ -59,14 +67,14 @@ const AppointmentsTab = () => {
   };
 
   const exportAppointmentsCsv = () => {
-    if (appointments.length === 0) {
-      toast.error("No hay turnos para exportar");
+    if (filteredAppointments.length === 0) {
+      toast.error("No hay turnos para exportar en ese mes");
       return;
     }
 
     const csv = buildCsv(
       ["Cliente", "Telefono", "Servicio", "Fecha", "Hora", "Estado", "Notas"],
-      appointments.map((apt) => {
+      filteredAppointments.map((apt) => {
         const date = new Date(apt.appointmentAt);
         return [
           apt.clientName,
@@ -80,8 +88,7 @@ const AppointmentsTab = () => {
       })
     );
 
-    const stamp = format(new Date(), "yyyyMMdd_HHmm");
-    downloadCsv(`turnos_${stamp}.csv`, csv);
+    downloadCsv(`turnos_${monthKeyForFilename(selectedMonth)}.csv`, csv);
     toast.success("CSV de turnos descargado");
   };
 
@@ -89,6 +96,13 @@ const AppointmentsTab = () => {
 
   return (
     <div className="space-y-3">
+      <div className="glass-card rounded-xl p-4 md:p-5">
+        <div className="grid md:grid-cols-[200px_1fr] gap-3 items-center">
+          <p className="text-sm text-muted-foreground">Mes a consultar</p>
+          <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+        </div>
+      </div>
+
       <div className="flex justify-end">
         <Button variant="outline" size="sm" onClick={exportAppointmentsCsv}>
           <Download className="w-4 h-4 mr-2" />
@@ -109,14 +123,14 @@ const AppointmentsTab = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {appointments.length === 0 ? (
+            {filteredAppointments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
-                  No hay turnos registrados
+                  No hay turnos registrados para ese mes
                 </TableCell>
               </TableRow>
             ) : (
-              appointments.map((apt) => {
+              filteredAppointments.map((apt) => {
                 const date = new Date(apt.appointmentAt);
                 return (
                   <TableRow key={apt.id} className="border-border">

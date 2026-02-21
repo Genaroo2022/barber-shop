@@ -16,6 +16,7 @@ public final class AppointmentMapper {
                 appointment.getClient().getPhone(),
                 appointment.getService().getId(),
                 appointment.getService().getName(),
+                appointment.getService().getPrice(),
                 appointment.getAppointmentAt(),
                 appointment.getStatus(),
                 appointment.getNotes()

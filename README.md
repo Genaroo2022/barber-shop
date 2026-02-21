@@ -42,10 +42,13 @@ docker compose down
 ## Estado actual importante
 
 - El backend ejecuta migraciones automaticamente al iniciar (Flyway via `SchemaMigrationConfig`).
-- Si la DB local esta vacia, se aplican `V1` y `V2` al levantar backend.
+- Si la DB local esta vacia, se aplican `V1`, `V2` y `V3` al levantar backend.
 - Endpoints nuevos:
   - CRUD de servicios en admin
   - Gestion de galeria en admin y consumo publico
+  - CRUD de ingresos manuales en admin (incluye propinas)
+  - Historial mensual en tabs de admin (`Estadisticas`, `Turnos`, `Ingresos`) con selector de mes
+  - Descargas CSV filtradas por mes seleccionado
 
 ## Modelo de dominio
 
@@ -53,6 +56,7 @@ docker compose down
 - `services`: catalogo de servicios con precio y duracion
 - `appointments`: turnos vinculados a cliente y servicio
 - `admin_users`: usuarios administradores
+- `manual_income_entries`: ingresos manuales + propinas cargados por admin
 
 Estados de turno: `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`.
 
@@ -210,6 +214,9 @@ Admin (JWT Bearer):
 - `PATCH /api/admin/appointments/{id}/status`
 - `GET /api/admin/metrics/overview`
 - `GET /api/admin/metrics/income`
+- `POST /api/admin/metrics/income/manual`
+- `PUT /api/admin/metrics/income/manual/{id}`
+- `DELETE /api/admin/metrics/income/manual/{id}`
 - `GET /api/admin/metrics/clients`
 - `GET /api/admin/services`
 - `POST /api/admin/services`
@@ -302,6 +309,8 @@ curl -X PATCH http://localhost:8080/api/admin/appointments/<APPOINTMENT_ID>/stat
 
 - El frontend ya consume el backend Spring (no depende de Supabase para login/agenda/admin).
 - Si cambias la URL/puerto del backend, actualiza `VITE_API_BASE_URL`.
+- En admin, los KPIs/turnos/ingresos se consultan por mes con input tipo calendario mensual (`YYYY-MM`).
+- Los botones `Descargar` de `Turnos` e `Ingresos` exportan solo el mes seleccionado.
 
 ## Pre-commit secret scan (recommended)
 

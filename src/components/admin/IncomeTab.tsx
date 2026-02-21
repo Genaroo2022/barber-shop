@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DollarSign, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,9 @@ import {
   createAdminManualIncome,
   deleteAdminManualIncome,
   getAdminIncome,
+  listAdminAppointments,
   updateAdminManualIncome,
+  type AppointmentItem,
   type IncomeBreakdownItem,
   type ManualIncomeEntry,
 } from "@/lib/api";
@@ -31,6 +33,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { buildCsv, downloadCsv } from "@/lib/csv";
+import { getCurrentMonthKey, isInMonth, monthKeyForFilename } from "@/lib/month";
 
 type ManualIncomeErrors = {
   amount?: string;
@@ -53,12 +56,8 @@ const emptyManualForm = (): ManualIncomeForm => ({
 });
 
 const IncomeTab = () => {
-  const [registeredIncome, setRegisteredIncome] = useState(0);
-  const [manualIncome, setManualIncome] = useState(0);
-  const [totalTips, setTotalTips] = useState(0);
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [monthlyIncome, setMonthlyIncome] = useState(0);
-  const [breakdown, setBreakdown] = useState<IncomeBreakdownItem[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
+  const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [manualEntries, setManualEntries] = useState<ManualIncomeEntry[]>([]);
 
   const [savingManualIncome, setSavingManualIncome] = useState(false);
@@ -76,24 +75,19 @@ const IncomeTab = () => {
 
   const fetchIncome = async () => {
     try {
-      const data = await getAdminIncome();
-      setRegisteredIncome(Number(data.registeredIncome) || 0);
-      setManualIncome(Number(data.manualIncome) || 0);
-      setTotalTips(Number(data.totalTips) || 0);
-      setTotalIncome(Number(data.totalIncome) || 0);
-      setMonthlyIncome(Number(data.monthlyIncome) || 0);
-      setBreakdown(
-        data.breakdown.map((item) => ({
-          ...item,
-          total: Number(item.total) || 0,
-        }))
-      );
+      const [income, appointments] = await Promise.all([getAdminIncome(), listAdminAppointments()]);
       setManualEntries(
-        data.manualEntries.map((entry) => ({
+        income.manualEntries.map((entry) => ({
           ...entry,
           amount: Number(entry.amount) || 0,
           tipAmount: Number(entry.tipAmount) || 0,
           total: Number(entry.total) || 0,
+        }))
+      );
+      setAppointments(
+        appointments.map((appointment) => ({
+          ...appointment,
+          servicePrice: Number(appointment.servicePrice) || 0,
         }))
       );
     } catch (err) {
@@ -106,26 +100,66 @@ const IncomeTab = () => {
     fetchIncome();
   }, []);
 
-  const formatPrice = (n: number) => `$${n.toLocaleString("es-AR")}`;
   const errorClass = (hasError: boolean) => (hasError ? "border-destructive focus-visible:ring-destructive" : "");
+  const formatPrice = (n: number) => `$${n.toLocaleString("es-AR")}`;
+
+  const filteredManualEntries = useMemo(
+    () => manualEntries.filter((entry) => isInMonth(entry.occurredOn, selectedMonth)),
+    [manualEntries, selectedMonth]
+  );
+  const filteredCompletedAppointments = useMemo(
+    () =>
+      appointments.filter(
+        (appointment) => appointment.status === "COMPLETED" && isInMonth(appointment.appointmentAt, selectedMonth)
+      ),
+    [appointments, selectedMonth]
+  );
+
+  const monthRegisteredIncome = filteredCompletedAppointments.reduce(
+    (sum, appointment) => sum + appointment.servicePrice,
+    0
+  );
+  const monthManualIncome = filteredManualEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const monthTips = filteredManualEntries.reduce((sum, entry) => sum + entry.tipAmount, 0);
+  const monthTotalIncome = monthRegisteredIncome + monthManualIncome + monthTips;
+
+  const monthlyBreakdown: IncomeBreakdownItem[] = useMemo(() => {
+    const byService = new Map<string, { count: number; total: number }>();
+    filteredCompletedAppointments.forEach((appointment) => {
+      const prev = byService.get(appointment.serviceName) ?? { count: 0, total: 0 };
+      byService.set(appointment.serviceName, {
+        count: prev.count + 1,
+        total: prev.total + appointment.servicePrice,
+      });
+    });
+    filteredManualEntries.forEach((entry) => {
+      const manualPrev = byService.get("Ingresos manuales") ?? { count: 0, total: 0 };
+      byService.set("Ingresos manuales", {
+        count: manualPrev.count + 1,
+        total: manualPrev.total + entry.amount,
+      });
+      if (entry.tipAmount > 0) {
+        const tipPrev = byService.get("Propinas") ?? { count: 0, total: 0 };
+        byService.set("Propinas", {
+          count: tipPrev.count + 1,
+          total: tipPrev.total + entry.tipAmount,
+        });
+      }
+    });
+    return Array.from(byService.entries())
+      .map(([serviceName, values]) => ({ serviceName, count: values.count, total: values.total }))
+      .sort((a, b) => b.total - a.total);
+  }, [filteredCompletedAppointments, filteredManualEntries]);
 
   const validateManualIncome = (form: ManualIncomeForm) => {
     const errors: ManualIncomeErrors = {};
     const amount = form.amount.trim() === "" ? 0 : Number(form.amount);
     const tipAmount = form.tipAmount.trim() === "" ? 0 : Number(form.tipAmount);
 
-    if (Number.isNaN(amount) || amount < 0) {
-      errors.amount = "Completa un monto valido (0 o mayor)";
-    }
-    if (Number.isNaN(tipAmount) || tipAmount < 0) {
-      errors.tipAmount = "La propina debe ser 0 o mayor";
-    }
-    if (!form.occurredOn) {
-      errors.occurredOn = "Selecciona una fecha";
-    }
-    if (amount + tipAmount <= 0) {
-      errors.amount = "Ingresa un monto o una propina";
-    }
+    if (Number.isNaN(amount) || amount < 0) errors.amount = "Completa un monto valido (0 o mayor)";
+    if (Number.isNaN(tipAmount) || tipAmount < 0) errors.tipAmount = "La propina debe ser 0 o mayor";
+    if (!form.occurredOn) errors.occurredOn = "Selecciona una fecha";
+    if (amount + tipAmount <= 0) errors.amount = "Ingresa un monto o una propina";
 
     if (errors.amount || errors.tipAmount || errors.occurredOn) {
       return { errors, payload: null };
@@ -149,7 +183,6 @@ const IncomeTab = () => {
       toast.error("Revisa los campos marcados en rojo");
       return;
     }
-
     try {
       setSavingManualIncome(true);
       setManualErrors({});
@@ -178,14 +211,12 @@ const IncomeTab = () => {
 
   const handleUpdateManualIncome = async () => {
     if (!editingEntry) return;
-
     const validation = validateManualIncome(editingForm);
     if (!validation.payload) {
       setEditingErrors(validation.errors);
       toast.error("Revisa los campos marcados en rojo");
       return;
     }
-
     try {
       setUpdatingManualIncome(true);
       setEditingErrors({});
@@ -219,15 +250,15 @@ const IncomeTab = () => {
 
   const exportIncomeCsv = () => {
     const summaryRows: Array<Array<string | number>> = [
-      ["Ingreso registrado (turnos)", registeredIncome],
-      ["Ingresos manuales", manualIncome],
-      ["Propinas", totalTips],
-      ["Ingreso total", totalIncome],
-      ["Ingreso del mes", monthlyIncome],
+      ["Mes", selectedMonth],
+      ["Ingreso registrado (turnos)", monthRegisteredIncome],
+      ["Ingresos manuales", monthManualIncome],
+      ["Propinas", monthTips],
+      ["Ingreso total", monthTotalIncome],
     ];
 
-    const breakdownRows = breakdown.map((item) => [item.serviceName, item.count, item.total]);
-    const manualRows = manualEntries.map((entry) => [
+    const breakdownRows = monthlyBreakdown.map((item) => [item.serviceName, item.count, item.total]);
+    const manualRows = filteredManualEntries.map((entry) => [
       entry.occurredOn,
       entry.amount,
       entry.tipAmount,
@@ -239,48 +270,51 @@ const IncomeTab = () => {
     const manualCsv = buildCsv(["Fecha", "Monto", "Propina", "Total", "Notas"], manualRows);
     const csv = `${summaryCsv}\n\n${breakdownCsv}\n\n${manualCsv}`;
 
-    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    downloadCsv(`ingresos_${stamp}.csv`, csv);
+    downloadCsv(`ingresos_${monthKeyForFilename(selectedMonth)}.csv`, csv);
     toast.success("CSV de ingresos descargado");
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button variant="outline" size="sm" onClick={exportIncomeCsv}>
-          <Download className="w-4 h-4 mr-2" />
-          Descargar
-        </Button>
+      <div className="glass-card rounded-xl p-4 md:p-5">
+        <div className="grid md:grid-cols-[200px_1fr_auto] gap-3 items-center">
+          <p className="text-sm text-muted-foreground">Mes a consultar</p>
+          <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+          <Button variant="outline" size="sm" onClick={exportIncomeCsv}>
+            <Download className="w-4 h-4 mr-2" />
+            Descargar
+          </Button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-card rounded-xl p-6 gold-border-glow">
           <div className="flex items-center gap-3 mb-3">
             <DollarSign className="w-5 h-5 text-primary" />
-            <span className="text-sm text-muted-foreground">Ingreso total</span>
+            <span className="text-sm text-muted-foreground">Ingreso total del mes</span>
           </div>
-          <p className="text-3xl font-display font-bold gold-text">{formatPrice(totalIncome)}</p>
+          <p className="text-3xl font-display font-bold gold-text">{formatPrice(monthTotalIncome)}</p>
         </div>
         <div className="glass-card rounded-xl p-6">
           <div className="flex items-center gap-3 mb-3">
             <DollarSign className="w-5 h-5 text-green-500" />
-            <span className="text-sm text-muted-foreground">Ingreso del mes</span>
+            <span className="text-sm text-muted-foreground">Turnos completados</span>
           </div>
-          <p className="text-3xl font-display font-bold">{formatPrice(monthlyIncome)}</p>
+          <p className="text-3xl font-display font-bold">{formatPrice(monthRegisteredIncome)}</p>
         </div>
         <div className="glass-card rounded-xl p-6">
           <div className="flex items-center gap-3 mb-3">
             <DollarSign className="w-5 h-5 text-blue-400" />
             <span className="text-sm text-muted-foreground">Ingresos manuales</span>
           </div>
-          <p className="text-3xl font-display font-bold">{formatPrice(manualIncome)}</p>
+          <p className="text-3xl font-display font-bold">{formatPrice(monthManualIncome)}</p>
         </div>
         <div className="glass-card rounded-xl p-6">
           <div className="flex items-center gap-3 mb-3">
             <DollarSign className="w-5 h-5 text-amber-400" />
             <span className="text-sm text-muted-foreground">Propinas</span>
           </div>
-          <p className="text-3xl font-display font-bold">{formatPrice(totalTips)}</p>
+          <p className="text-3xl font-display font-bold">{formatPrice(monthTips)}</p>
         </div>
       </div>
 
@@ -341,12 +375,12 @@ const IncomeTab = () => {
       </div>
 
       <div className="glass-card rounded-xl p-6">
-        <h3 className="font-display font-semibold mb-4">Desglose de ingresos</h3>
-        {breakdown.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No hay ingresos registrados</p>
+        <h3 className="font-display font-semibold mb-4">Desglose de ingresos del mes</h3>
+        {monthlyBreakdown.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No hay ingresos registrados para ese mes</p>
         ) : (
           <div className="space-y-3">
-            {breakdown.map((item) => (
+            {monthlyBreakdown.map((item) => (
               <div
                 key={item.serviceName}
                 className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
@@ -363,12 +397,12 @@ const IncomeTab = () => {
       </div>
 
       <div className="glass-card rounded-xl p-6">
-        <h3 className="font-display font-semibold mb-4">Ingresos manuales cargados</h3>
-        {manualEntries.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Todavia no cargaste ingresos manuales</p>
+        <h3 className="font-display font-semibold mb-4">Ingresos manuales del mes</h3>
+        {filteredManualEntries.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No hay ingresos manuales para ese mes</p>
         ) : (
           <div className="space-y-3">
-            {manualEntries.map((entry) => (
+            {filteredManualEntries.map((entry) => (
               <div
                 key={entry.id}
                 className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"

@@ -74,6 +74,7 @@ export type AppointmentItem = {
   clientPhone: string;
   serviceId: string;
   serviceName: string;
+  servicePrice: number;
   appointmentAt: string;
   status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
   notes?: string | null;

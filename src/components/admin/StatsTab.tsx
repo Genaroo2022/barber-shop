@@ -1,35 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, DollarSign, Scissors, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { getAdminIncome, listAdminAppointments } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { getAdminIncome, listAdminAppointments, type AppointmentItem, type ManualIncomeEntry } from "@/lib/api";
+import { getCurrentMonthKey, isInMonth } from "@/lib/month";
 
 const StatsTab = () => {
-  const [stats, setStats] = useState({
-    monthlyAppointments: 0,
-    completedAppointments: 0,
-    cancelledAppointments: 0,
-    monthlyIncome: 0,
-  });
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey());
+  const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
+  const [manualEntries, setManualEntries] = useState<ManualIncomeEntry[]>([]);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const [appointments, income] = await Promise.all([listAdminAppointments(), getAdminIncome()]);
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth();
-
-        const monthlyAppointments = appointments.filter((appointment) => {
-          const date = new Date(appointment.appointmentAt);
-          return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
-        });
-
-        setStats({
-          monthlyAppointments: monthlyAppointments.length,
-          completedAppointments: appointments.filter((a) => a.status === "COMPLETED").length,
-          cancelledAppointments: appointments.filter((a) => a.status === "CANCELLED").length,
-          monthlyIncome: Number(income.monthlyIncome) || 0,
-        });
+        setAppointments(
+          appointments.map((appointment) => ({
+            ...appointment,
+            servicePrice: Number(appointment.servicePrice) || 0,
+          }))
+        );
+        setManualEntries(
+          income.manualEntries.map((entry) => ({
+            ...entry,
+            amount: Number(entry.amount) || 0,
+            tipAmount: Number(entry.tipAmount) || 0,
+            total: Number(entry.total) || 0,
+          }))
+        );
       } catch (err) {
         const message = err instanceof Error ? err.message : "Error al cargar estadisticas";
         toast.error(message);
@@ -38,13 +36,38 @@ const StatsTab = () => {
     fetchStats();
   }, []);
 
+  const filteredAppointments = useMemo(
+    () => appointments.filter((appointment) => isInMonth(appointment.appointmentAt, selectedMonth)),
+    [appointments, selectedMonth]
+  );
+  const filteredManualEntries = useMemo(
+    () => manualEntries.filter((entry) => isInMonth(entry.occurredOn, selectedMonth)),
+    [manualEntries, selectedMonth]
+  );
+
+  const monthlyIncome =
+    filteredAppointments
+      .filter((appointment) => appointment.status === "COMPLETED")
+      .reduce((sum, appointment) => sum + appointment.servicePrice, 0) +
+    filteredManualEntries.reduce((sum, entry) => sum + entry.amount + entry.tipAmount, 0);
+
   const cards = [
-    { label: "Turnos del mes", value: stats.monthlyAppointments, icon: CalendarDays, color: "text-primary" },
-    { label: "Completados", value: stats.completedAppointments, icon: Scissors, color: "text-green-500" },
-    { label: "Cancelados", value: stats.cancelledAppointments, icon: XCircle, color: "text-red-500" },
+    { label: "Turnos del mes", value: filteredAppointments.length, icon: CalendarDays, color: "text-primary" },
+    {
+      label: "Completados",
+      value: filteredAppointments.filter((a) => a.status === "COMPLETED").length,
+      icon: Scissors,
+      color: "text-green-500",
+    },
+    {
+      label: "Cancelados",
+      value: filteredAppointments.filter((a) => a.status === "CANCELLED").length,
+      icon: XCircle,
+      color: "text-red-500",
+    },
     {
       label: "Ingreso mensual",
-      value: `$${stats.monthlyIncome.toLocaleString("es-AR")}`,
+      value: `$${monthlyIncome.toLocaleString("es-AR")}`,
       icon: DollarSign,
       color: "text-emerald-500",
     },
@@ -52,6 +75,13 @@ const StatsTab = () => {
 
   return (
     <div className="space-y-6">
+      <div className="glass-card rounded-xl p-4 md:p-5">
+        <div className="grid md:grid-cols-[200px_1fr] gap-3 items-center">
+          <p className="text-sm text-muted-foreground">Mes a consultar</p>
+          <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (
           <div key={card.label} className="glass-card rounded-xl p-6">

@@ -9,6 +9,8 @@ Core business capabilities:
 - Admin login and protected backoffice
 - Appointment lifecycle management (`PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`)
 - Admin metrics (appointments, clients, income)
+- Manual income management in admin (off-system cuts + tips)
+- Monthly history views for `stats`, `appointments`, and `income`
 
 ## Tech Stack
 
@@ -62,6 +64,7 @@ Deployment (current):
 - `services`
 - `appointments`
 - `admin_users`
+- `manual_income_entries`
 
 ## Runtime Profiles
 
@@ -156,9 +159,11 @@ npm run build
 - New capabilities in progress:
   - Admin CRUD for services (`/api/admin/services`)
   - Admin/Public gallery management (`/api/admin/gallery`, `/api/public/gallery`)
+  - Admin manual income CRUD (`/api/admin/metrics/income/manual`)
+  - Monthly history filters in admin tabs (`stats`, `appointments`, `income`)
 - Backend migrations must run automatically at startup.
   - Current implementation uses `backend/src/main/java/com/barberia/stylebook/config/SchemaMigrationConfig.java`.
-  - Keep migration scripts in `backend/src/main/resources/db/migration`.
+  - Keep migration scripts in `backend/src/main/resources/db/migration` (`V1`, `V2`, `V3` currently).
 
 ## UI Parity Rule
 

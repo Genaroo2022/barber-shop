@@ -40,8 +40,11 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
   const payload = isJson ? await response.json() : null;
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (options.auth && (response.status === 401 || response.status === 403)) {
       clearAccessToken();
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.assign("/login");
+      }
     }
     const message = payload?.error || "Error de servidor";
     throw new ApiError(message, response.status);
@@ -81,7 +84,12 @@ export type AppointmentItem = {
   notes?: string | null;
 };
 
+export type PublicOccupiedAppointment = {
+  appointmentAt: string;
+};
+
 export type ClientSummary = {
+  id: string;
   clientName: string;
   clientPhone: string;
   totalAppointments: number;
@@ -163,8 +171,61 @@ export async function updateAdminAppointmentStatus(id: string, status: Appointme
   });
 }
 
+export async function listPublicOccupiedAppointments(
+  serviceId: string,
+  date: string
+): Promise<PublicOccupiedAppointment[]> {
+  const query = new URLSearchParams({ serviceId, date }).toString();
+  return apiRequest<PublicOccupiedAppointment[]>(`/api/public/appointments/occupied?${query}`);
+}
+
+export async function updateAdminAppointment(
+  id: string,
+  payload: {
+    clientName: string;
+    clientPhone: string;
+    serviceId: string;
+    appointmentAt: string;
+    notes?: string;
+  }
+): Promise<AppointmentItem> {
+  return apiRequest<AppointmentItem>(`/api/admin/appointments/${id}`, {
+    method: "PUT",
+    body: payload,
+    auth: true,
+  });
+}
+
+export async function deleteAdminAppointment(id: string): Promise<void> {
+  await apiRequest<null>(`/api/admin/appointments/${id}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
 export async function listAdminClients(): Promise<ClientSummary[]> {
-  return apiRequest<ClientSummary[]>("/api/admin/metrics/clients", { auth: true });
+  return apiRequest<ClientSummary[]>("/api/admin/clients", { auth: true });
+}
+
+export async function updateAdminClient(
+  id: string,
+  payload: {
+    name: string;
+    phone: string;
+  }
+): Promise<ClientSummary> {
+  return apiRequest<ClientSummary>(`/api/admin/clients/${id}`, {
+    method: "PUT",
+    body: payload,
+    auth: true,
+  });
+}
+
+export async function deleteAdminClient(id: string): Promise<void> {
+  await apiRequest<null>(`/api/admin/clients/${id}`, {
+    method: "DELETE",
+    auth: true,
+  });
 }
 
 export async function getAdminOverview(): Promise<OverviewMetrics> {

@@ -10,7 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { createPublicAppointment, listPublicServices, type ServiceItem } from "@/lib/api";
+import {
+  createPublicAppointment,
+  listPublicOccupiedAppointments,
+  listPublicServices,
+  type ServiceItem,
+} from "@/lib/api";
 
 const timeSlots = [
   "09:00",
@@ -31,6 +36,30 @@ const timeSlots = [
   "18:30",
 ];
 
+type FormErrors = {
+  name?: string;
+  phone?: string;
+  serviceId?: string;
+  date?: string;
+  time?: string;
+};
+
+const phoneHasValidLength = (phone: string): boolean => {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 8 && digits.length <= 15;
+};
+
+const phoneHasValidCharacters = (phone: string): boolean =>
+  /^[0-9+()\-\s]+$/.test(phone);
+
+const getPhoneValidationMessage = (rawPhone: string): string | null => {
+  const phone = rawPhone.trim();
+  if (!phone) return "Completa tu telefono";
+  if (!phoneHasValidCharacters(phone)) return "Telefono invalido (solo numeros, +, (), -, espacios)";
+  if (!phoneHasValidLength(phone)) return "Telefono invalido (entre 8 y 15 digitos)";
+  return null;
+};
+
 const BookingForm = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -40,6 +69,8 @@ const BookingForm = () => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<ServiceItem[]>([]);
+  const [occupiedSlots, setOccupiedSlots] = useState<Set<string>>(new Set());
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -51,12 +82,19 @@ const BookingForm = () => {
         toast.error(message);
       }
     };
-    fetchServices();
+    void fetchServices();
   }, []);
 
   const selectedServiceName = useMemo(
     () => services.find((s) => s.id === serviceId)?.name || "",
     [services, serviceId]
+  );
+
+  const selectedDateKey = useMemo(() => (date ? format(date, "yyyy-MM-dd") : ""), [date]);
+
+  const availableTimeSlots = useMemo(
+    () => timeSlots.filter((slot) => !occupiedSlots.has(slot)),
+    [occupiedSlots]
   );
 
   const getBookingErrorMessage = (err: unknown): string => {
@@ -67,35 +105,98 @@ const BookingForm = () => {
     if (normalized.includes("ya existe un turno para ese servicio en esa fecha/hora")) {
       return "Ese horario ya fue tomado para el servicio seleccionado. Elegi otro horario para evitar doble reserva.";
     }
+    if (normalized.includes("demasiadas reservas")) {
+      return err.message;
+    }
 
     return err.message || fallback;
   };
 
+  const fetchOccupiedSlots = async (selectedServiceId: string, selectedDate: string) => {
+    const occupied = await listPublicOccupiedAppointments(selectedServiceId, selectedDate);
+    const next = new Set(occupied.map((item) => format(new Date(item.appointmentAt), "HH:mm")));
+    setOccupiedSlots(next);
+    if (time && next.has(time)) {
+      setTime("");
+    }
+  };
+
+  const markCurrentSlotAsOccupied = (slot: string) => {
+    setOccupiedSlots((prev) => {
+      const next = new Set(prev);
+      next.add(slot);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!serviceId || !selectedDateKey) {
+      setOccupiedSlots(new Set());
+      return;
+    }
+
+    const load = async () => {
+      try {
+        await fetchOccupiedSlots(serviceId, selectedDateKey);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "No se pudieron actualizar los horarios";
+        toast.error(message);
+      }
+    };
+
+    void load();
+    const interval = setInterval(() => {
+      void load();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [serviceId, selectedDateKey]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone || !serviceId || !date || !time) {
+    const errors: FormErrors = {};
+    if (!name.trim()) errors.name = "Completa tu nombre";
+    const phoneError = getPhoneValidationMessage(phone);
+    if (phoneError) errors.phone = phoneError;
+    if (!serviceId) errors.serviceId = "Selecciona un servicio";
+    if (!date) errors.date = "Selecciona una fecha";
+    if (!time) errors.time = "Selecciona un horario";
+
+    if (errors.name || errors.phone || errors.serviceId || errors.date || errors.time) {
+      setFieldErrors(errors);
       toast.error("Por favor completa todos los campos");
       return;
     }
 
     setLoading(true);
+    setFieldErrors({});
     try {
-      const datePart = format(date, "yyyy-MM-dd");
+      const datePart = format(date as Date, "yyyy-MM-dd");
       const appointmentAt = new Date(`${datePart}T${time}:00`).toISOString();
       await createPublicAppointment({
-        clientName: name,
-        clientPhone: phone,
+        clientName: name.trim(),
+        clientPhone: phone.trim(),
         serviceId,
         appointmentAt,
       });
+      markCurrentSlotAsOccupied(time);
       setSubmitted(true);
       toast.success("Turno reservado con exito");
     } catch (err) {
       toast.error(getBookingErrorMessage(err));
+      if (serviceId && selectedDateKey) {
+        try {
+          await fetchOccupiedSlots(serviceId, selectedDateKey);
+        } catch {
+          // ignore secondary refresh failure
+        }
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const errorClass = (hasError: boolean) =>
+    hasError ? "border-destructive focus-visible:ring-destructive" : "";
 
   if (submitted) {
     return (
@@ -123,9 +224,11 @@ const BookingForm = () => {
                 setServiceId("");
                 setDate(undefined);
                 setTime("");
+                setOccupiedSlots(new Set());
+                setFieldErrors({});
               }}
             >
-              Reservar otro turno
+              Entendido
             </Button>
           </motion.div>
         </div>
@@ -163,9 +266,13 @@ const BookingForm = () => {
               id="name"
               placeholder="Tu nombre"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="bg-secondary/50 border-border/50 focus:border-primary"
+              onChange={(e) => {
+                setName(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, name: undefined }));
+              }}
+              className={`bg-secondary/50 border-border/50 focus:border-primary ${errorClass(Boolean(fieldErrors.name))}`}
             />
+            {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
           </div>
 
           <div className="space-y-2">
@@ -176,15 +283,32 @@ const BookingForm = () => {
               id="phone"
               placeholder="Tu numero de telefono"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="bg-secondary/50 border-border/50 focus:border-primary"
+              onChange={(e) => {
+                const value = e.target.value;
+                setPhone(value);
+                setFieldErrors((prev) => {
+                  if (!prev.phone) return prev;
+                  return { ...prev, phone: getPhoneValidationMessage(value) ?? undefined };
+                });
+              }}
+              className={`bg-secondary/50 border-border/50 focus:border-primary ${errorClass(Boolean(fieldErrors.phone))}`}
             />
+            {fieldErrors.phone && <p className="text-xs text-destructive">{fieldErrors.phone}</p>}
           </div>
 
           <div className="space-y-2">
             <Label className="text-foreground/80">Servicio</Label>
-            <Select value={serviceId} onValueChange={setServiceId}>
-              <SelectTrigger className="bg-secondary/50 border-border/50">
+            <Select
+              value={serviceId}
+              onValueChange={(value) => {
+                setServiceId(value);
+                setFieldErrors((prev) => ({ ...prev, serviceId: undefined, time: undefined }));
+                setTime("");
+              }}
+            >
+              <SelectTrigger
+                className={`bg-secondary/50 border-border/50 ${fieldErrors.serviceId ? "border-destructive ring-destructive" : ""}`}
+              >
                 <SelectValue placeholder="Elige un servicio" />
               </SelectTrigger>
               <SelectContent className="bg-card border-border">
@@ -195,6 +319,7 @@ const BookingForm = () => {
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.serviceId && <p className="text-xs text-destructive">{fieldErrors.serviceId}</p>}
           </div>
 
           <div className="space-y-2">
@@ -203,7 +328,7 @@ const BookingForm = () => {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left bg-secondary/50 border-border/50 hover:bg-secondary"
+                  className={`w-full justify-start text-left bg-secondary/50 border-border/50 hover:bg-secondary ${errorClass(Boolean(fieldErrors.date))}`}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
                   {date ? format(date, "PPP", { locale: es }) : "Selecciona una fecha"}
@@ -213,28 +338,45 @@ const BookingForm = () => {
                 <Calendar
                   mode="single"
                   selected={date}
-                  onSelect={setDate}
+                  onSelect={(selected) => {
+                    setDate(selected);
+                    setFieldErrors((prev) => ({ ...prev, date: undefined, time: undefined }));
+                    setTime("");
+                  }}
                   disabled={(d) => d < new Date() || d.getDay() === 0}
                   locale={es}
                 />
               </PopoverContent>
             </Popover>
+            {fieldErrors.date && <p className="text-xs text-destructive">{fieldErrors.date}</p>}
           </div>
 
           <div className="space-y-2">
             <Label className="text-foreground/80">Horario</Label>
-            <Select value={time} onValueChange={setTime}>
-              <SelectTrigger className="bg-secondary/50 border-border/50">
+            <Select
+              value={time}
+              onValueChange={(value) => {
+                setTime(value);
+                setFieldErrors((prev) => ({ ...prev, time: undefined }));
+              }}
+            >
+              <SelectTrigger
+                className={`bg-secondary/50 border-border/50 ${fieldErrors.time ? "border-destructive ring-destructive" : ""}`}
+              >
                 <SelectValue placeholder="Elige un horario" />
               </SelectTrigger>
               <SelectContent className="bg-card border-border">
-                {timeSlots.map((slot) => (
+                {availableTimeSlots.map((slot) => (
                   <SelectItem key={slot} value={slot}>
                     {slot}hs
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {availableTimeSlots.length === 0 && date && serviceId && (
+              <p className="text-xs text-muted-foreground">No hay horarios disponibles para esa fecha.</p>
+            )}
+            {fieldErrors.time && <p className="text-xs text-destructive">{fieldErrors.time}</p>}
           </div>
 
           <Button

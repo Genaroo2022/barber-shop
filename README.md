@@ -1,4 +1,4 @@
-# Style Book Pro
+# Barber Shop
 
 Aplicacion para gestion de turnos de barberia:
 - Frontend: React + Vite + TypeScript (`/`)
@@ -43,12 +43,18 @@ docker compose down
 
 - El backend ejecuta migraciones automaticamente al iniciar (Flyway via `SchemaMigrationConfig`).
 - Si la DB local esta vacia, se aplican `V1`, `V2` y `V3` al levantar backend.
-- Endpoints nuevos:
+- Capacidades relevantes:
   - CRUD de servicios en admin
-  - Gestion de galeria en admin y consumo publico
+  - Gestion de galeria en admin y consumo publico (incluye carga multiple y borrado masivo en admin)
   - CRUD de ingresos manuales en admin (incluye propinas)
   - Historial mensual en tabs de admin (`Estadisticas`, `Turnos`, `Ingresos`) con selector de mes
   - Descargas CSV filtradas por mes seleccionado
+  - Admin turnos: editar, cambiar estado y eliminar
+  - Admin clientes: editar y eliminar
+  - Formulario publico de turnos con validacion por campo (errores visuales en rojo)
+  - Disponibilidad reactiva de horarios en booking publico (`/api/public/appointments/occupied`)
+  - Polling en admin de turnos + toast cuando llegan turnos nuevos (sin recargar pagina)
+  - Rate limiting para login y para reservas publicas por IP
 
 ## Modelo de dominio
 
@@ -87,6 +93,8 @@ Opcionales:
 $env:BOOTSTRAP_ADMIN_ENABLED="<true|false>"
 $env:BOOTSTRAP_ADMIN_EMAIL="<admin-email>"
 $env:BOOTSTRAP_ADMIN_PASSWORD="<admin-password>"
+$env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_MINUTE="<int>"
+$env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_HOUR="<int>"
 ```
 
 ### Ejecutar backend
@@ -206,18 +214,24 @@ El repo incluye archivos para SPA routing:
 Publicos:
 - `GET /api/public/services`
 - `GET /api/public/gallery`
+- `GET /api/public/appointments/occupied?serviceId=<UUID>&date=<YYYY-MM-DD>`
 - `POST /api/public/appointments`
 - `POST /api/auth/login`
 
 Admin (JWT Bearer):
 - `GET /api/admin/appointments`
+- `PUT /api/admin/appointments/{id}`
 - `PATCH /api/admin/appointments/{id}/status`
+- `DELETE /api/admin/appointments/{id}`
 - `GET /api/admin/metrics/overview`
 - `GET /api/admin/metrics/income`
 - `POST /api/admin/metrics/income/manual`
 - `PUT /api/admin/metrics/income/manual/{id}`
 - `DELETE /api/admin/metrics/income/manual/{id}`
-- `GET /api/admin/metrics/clients`
+- `GET /api/admin/metrics/clients` (compat endpoint)
+- `GET /api/admin/clients`
+- `PUT /api/admin/clients/{id}`
+- `DELETE /api/admin/clients/{id}`
 - `GET /api/admin/services`
 - `POST /api/admin/services`
 - `PUT /api/admin/services/{id}`
@@ -311,6 +325,8 @@ curl -X PATCH http://localhost:8080/api/admin/appointments/<APPOINTMENT_ID>/stat
 - Si cambias la URL/puerto del backend, actualiza `VITE_API_BASE_URL`.
 - En admin, los KPIs/turnos/ingresos se consultan por mes con input tipo calendario mensual (`YYYY-MM`).
 - Los botones `Descargar` de `Turnos` e `Ingresos` exportan solo el mes seleccionado.
+- En Admin > Turnos, hay refresco automatico periodico y toast de nuevos turnos.
+- En booking publico, un horario reservado desaparece inmediatamente y tambien se recalcula automaticamente desde backend.
 
 ## Pre-commit secret scan (recommended)
 

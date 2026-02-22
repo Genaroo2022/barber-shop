@@ -5,15 +5,21 @@ import com.barberia.stylebook.application.exception.NotFoundException;
 import com.barberia.stylebook.domain.entity.Appointment;
 import com.barberia.stylebook.domain.entity.Client;
 import com.barberia.stylebook.domain.entity.ServiceCatalog;
+import com.barberia.stylebook.domain.enums.AppointmentStatus;
 import com.barberia.stylebook.repository.AppointmentRepository;
 import com.barberia.stylebook.repository.ClientRepository;
 import com.barberia.stylebook.repository.ServiceCatalogRepository;
 import com.barberia.stylebook.web.dto.AppointmentResponse;
 import com.barberia.stylebook.web.dto.CreateAppointmentRequest;
+import com.barberia.stylebook.web.dto.PublicOccupiedAppointmentResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 
 @Service
 public class BookingService {
@@ -73,7 +79,27 @@ public class BookingService {
         appointment.setAppointmentAt(appointmentAt);
         appointment.setNotes(normalizedNotes);
 
-        Appointment saved = appointmentRepository.save(appointment);
-        return AppointmentMapper.toResponse(saved);
+        try {
+            Appointment saved = appointmentRepository.saveAndFlush(appointment);
+            return AppointmentMapper.toResponse(saved);
+        } catch (DataIntegrityViolationException ex) {
+            throw new BusinessRuleException("Ya existe un turno para ese servicio en esa fecha/hora");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicOccupiedAppointmentResponse> listOccupiedAppointments(LocalDate date, java.util.UUID serviceId) {
+        ServiceCatalog service = serviceCatalogRepository.findById(serviceId)
+                .orElseThrow(() -> new NotFoundException("Servicio no encontrado"));
+
+        OffsetDateTime from = date.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime to = date.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+
+        return appointmentRepository
+                .findAllByServiceIdAndAppointmentAtGreaterThanEqualAndAppointmentAtLessThan(service.getId(), from, to)
+                .stream()
+                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
+                .map(appointment -> new PublicOccupiedAppointmentResponse(appointment.getAppointmentAt()))
+                .toList();
     }
 }

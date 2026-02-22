@@ -54,7 +54,7 @@ class BookingServiceTest {
 
         assertThrows(NotFoundException.class, () -> bookingService.create(request));
         verify(clientRepository, never()).save(any(Client.class));
-        verify(appointmentRepository, never()).save(any(Appointment.class));
+        verify(appointmentRepository, never()).saveAndFlush(any(Appointment.class));
     }
 
     @Test
@@ -65,7 +65,7 @@ class BookingServiceTest {
 
         assertThrows(BusinessRuleException.class, () -> bookingService.create(request));
         verify(clientRepository, never()).save(any(Client.class));
-        verify(appointmentRepository, never()).save(any(Appointment.class));
+        verify(appointmentRepository, never()).saveAndFlush(any(Appointment.class));
     }
 
     @Test
@@ -79,7 +79,7 @@ class BookingServiceTest {
 
         assertThrows(BusinessRuleException.class, () -> bookingService.create(request));
         verify(clientRepository, never()).save(any(Client.class));
-        verify(appointmentRepository, never()).save(any(Appointment.class));
+        verify(appointmentRepository, never()).saveAndFlush(any(Appointment.class));
     }
 
     @Test
@@ -97,7 +97,7 @@ class BookingServiceTest {
         when(appointmentRepository.existsByServiceIdAndAppointmentAt(service.getId(), normalizedAt)).thenReturn(false);
         when(clientRepository.findByPhone(request.clientPhone())).thenReturn(Optional.empty());
         when(clientRepository.save(any(Client.class))).thenReturn(newClient);
-        when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> {
+        when(appointmentRepository.saveAndFlush(any(Appointment.class))).thenAnswer(invocation -> {
             Appointment apt = invocation.getArgument(0);
             ReflectionTestUtils.setField(apt, "id", UUID.randomUUID());
             apt.setStatus(AppointmentStatus.PENDING);
@@ -110,7 +110,7 @@ class BookingServiceTest {
         assertEquals(service.getName(), response.serviceName());
         assertEquals(AppointmentStatus.PENDING, response.status());
         verify(clientRepository).save(any(Client.class));
-        verify(appointmentRepository).save(any(Appointment.class));
+        verify(appointmentRepository).saveAndFlush(any(Appointment.class));
     }
 
     @Test
@@ -128,7 +128,7 @@ class BookingServiceTest {
         when(appointmentRepository.existsByServiceIdAndAppointmentAt(service.getId(), normalizedAt)).thenReturn(false);
         when(clientRepository.findByPhone(request.clientPhone())).thenReturn(Optional.of(existing));
         when(clientRepository.save(existing)).thenReturn(existing);
-        when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(appointmentRepository.saveAndFlush(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         bookingService.create(request);
 

@@ -1,13 +1,17 @@
 package com.barberia.stylebook.web;
 
 import com.barberia.stylebook.application.service.AdminAppointmentService;
+import com.barberia.stylebook.web.dto.AdminAppointmentUpsertRequest;
 import com.barberia.stylebook.web.dto.AppointmentResponse;
 import com.barberia.stylebook.web.dto.UpdateAppointmentStatusRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,5 +40,19 @@ public class AdminAppointmentController {
             @Valid @RequestBody UpdateAppointmentStatusRequest request
     ) {
         return ResponseEntity.ok(adminAppointmentService.updateStatus(id, request.status()));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AppointmentResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody AdminAppointmentUpsertRequest request
+    ) {
+        return ResponseEntity.ok(adminAppointmentService.update(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        adminAppointmentService.delete(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

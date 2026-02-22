@@ -6,11 +6,15 @@ This repository contains a personal project for barbershop appointment managemen
 
 Core business capabilities:
 - Public booking flow for clients
+- Reactive public slot availability (occupied slots hidden without page reload)
 - Admin login and protected backoffice
 - Appointment lifecycle management (`PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`)
+- Admin appointment management (list, edit, status update, delete)
+- Admin client management (list, edit, delete)
 - Admin metrics (appointments, clients, income)
 - Manual income management in admin (off-system cuts + tips)
 - Monthly history views for `stats`, `appointments`, and `income`
+- Basic anti-abuse protection for public booking and login (IP/email rate limiting)
 
 ## Tech Stack
 
@@ -48,6 +52,8 @@ Deployment (current):
 - `src/components/admin`: admin tabs (appointments, clients, stats, income)
 - `src/lib/api.ts`: backend HTTP client and DTO typing
 - `src/lib/auth.ts`: token storage/auth helpers
+- `src/components/landing/BookingForm.tsx`: public booking validation + live occupied-slot refresh
+- `src/components/admin/AppointmentsTab.tsx`: admin appointments CRUD-like flow + periodic refresh + toast notifications
 
 ### Backend (`/backend`)
 - `domain/entity`: JPA entities
@@ -56,6 +62,7 @@ Deployment (current):
 - `application/service`: use-case/business services
 - `web`: controllers, DTOs, exception mapping
 - `security`: JWT service/filter
+- `security`: includes `LoginRateLimiter`, `BookingRateLimiter`, `ClientIpResolver`
 - `config`: Spring security and bootstrap configuration
 - `src/main/resources/db/migration`: Flyway SQL migrations
 
@@ -114,6 +121,7 @@ npm run dev
 Public endpoints:
 - `GET /api/public/services`
 - `POST /api/public/appointments`
+- `GET /api/public/appointments/occupied`
 - `POST /api/auth/login`
 
 Admin endpoints require Bearer token:
@@ -155,12 +163,16 @@ npm run build
 
 ## Current Workstream Notes
 
-- Active branch target: `feature/admin-services-gallery`.
-- New capabilities in progress:
-  - Admin CRUD for services (`/api/admin/services`)
-  - Admin/Public gallery management (`/api/admin/gallery`, `/api/public/gallery`)
-  - Admin manual income CRUD (`/api/admin/metrics/income/manual`)
-  - Monthly history filters in admin tabs (`stats`, `appointments`, `income`)
+- Branch focus remains around admin/public booking hardening and operations UX.
+- Implemented recently:
+  - Gallery improvements (single/multi upload, reorder swap confirmation, bulk delete options)
+  - Admin appointments: edit + delete + status editing from modal
+  - Admin clients: edit + delete
+  - `Turnos Totales` in clients now counts only `COMPLETED`
+  - Public booking: field-level validation, occupied slots endpoint integration, immediate slot hide after successful booking
+  - Public booking anti-abuse: `BookingRateLimiter` by client IP
+  - Admin appointments tab: periodic polling + toast when new appointments arrive
+  - Rate-limit tests for booking/login
 - Backend migrations must run automatically at startup.
   - Current implementation uses `backend/src/main/java/com/barberia/stylebook/config/SchemaMigrationConfig.java`.
   - Keep migration scripts in `backend/src/main/resources/db/migration` (`V1`, `V2`, `V3` currently).

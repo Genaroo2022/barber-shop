@@ -5,7 +5,6 @@ import com.barberia.stylebook.domain.entity.ManualIncomeEntry;
 import com.barberia.stylebook.domain.enums.AppointmentStatus;
 import com.barberia.stylebook.repository.AppointmentRepository;
 import com.barberia.stylebook.repository.ManualIncomeEntryRepository;
-import com.barberia.stylebook.web.dto.ClientSummaryResponse;
 import com.barberia.stylebook.web.dto.IncomeBreakdownItem;
 import com.barberia.stylebook.web.dto.IncomeMetricsResponse;
 import com.barberia.stylebook.web.dto.ManualIncomeEntryResponse;
@@ -115,27 +114,6 @@ public class AdminMetricsService {
                 breakdown,
                 manualEntryResponses
         );
-    }
-
-    @Transactional(readOnly = true)
-    public List<ClientSummaryResponse> clients() {
-        Map<String, List<Appointment>> byPhone = appointmentRepository.findAll().stream()
-                .collect(java.util.stream.Collectors.groupingBy(a -> a.getClient().getPhone()));
-
-        return byPhone.values().stream()
-                .map(list -> {
-                    Appointment latest = list.stream()
-                            .max(Comparator.comparing(Appointment::getAppointmentAt))
-                            .orElseThrow();
-                    return new ClientSummaryResponse(
-                            latest.getClient().getName(),
-                            latest.getClient().getPhone(),
-                            list.size(),
-                            latest.getAppointmentAt().toLocalDate().toString()
-                    );
-                })
-                .sorted(Comparator.comparing(ClientSummaryResponse::lastVisit).reversed())
-                .toList();
     }
 
     private static class IncomeAccumulator {

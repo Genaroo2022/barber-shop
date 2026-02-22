@@ -1,6 +1,7 @@
 package com.barberia.stylebook.web;
 
 import com.barberia.stylebook.application.service.AdminMetricsService;
+import com.barberia.stylebook.application.service.AdminClientService;
 import com.barberia.stylebook.application.service.ManualIncomeService;
 import com.barberia.stylebook.web.dto.ClientSummaryResponse;
 import com.barberia.stylebook.web.dto.CreateManualIncomeRequest;
@@ -26,10 +27,16 @@ import java.util.UUID;
 public class AdminMetricsController {
 
     private final AdminMetricsService adminMetricsService;
+    private final AdminClientService adminClientService;
     private final ManualIncomeService manualIncomeService;
 
-    public AdminMetricsController(AdminMetricsService adminMetricsService, ManualIncomeService manualIncomeService) {
+    public AdminMetricsController(
+            AdminMetricsService adminMetricsService,
+            AdminClientService adminClientService,
+            ManualIncomeService manualIncomeService
+    ) {
         this.adminMetricsService = adminMetricsService;
+        this.adminClientService = adminClientService;
         this.manualIncomeService = manualIncomeService;
     }
 
@@ -66,6 +73,6 @@ public class AdminMetricsController {
 
     @GetMapping("/clients")
     public ResponseEntity<List<ClientSummaryResponse>> clients() {
-        return ResponseEntity.ok(adminMetricsService.clients());
+        return ResponseEntity.ok(adminClientService.list());
     }
 }

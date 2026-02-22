@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local secrets / local-only files
+.env
+security-check.http
+
+# Build artifacts
+backend/target/

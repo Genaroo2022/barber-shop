@@ -95,6 +95,8 @@ $env:BOOTSTRAP_ADMIN_EMAIL="<admin-email>"
 $env:BOOTSTRAP_ADMIN_PASSWORD="<admin-password>"
 $env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_MINUTE="<int>"
 $env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_HOUR="<int>"
+$env:FIREBASE_API_KEY="<firebase-web-api-key>"
+$env:FIREBASE_ALLOWED_UIDS="<uid_1,uid_2,...>"
 ```
 
 ### Ejecutar backend
@@ -146,6 +148,8 @@ Archivo `.env`:
 
 ```env
 VITE_API_BASE_URL="http://localhost:8080"
+VITE_LOGIN_PATH="/acceso-admin-9x7p"
+VITE_ADMIN_PATH="/panel-admin-9x7p"
 ```
 
 ### Ejecutar frontend
@@ -184,6 +188,8 @@ DB_USER=<neon-user>
 DB_PASSWORD=<neon-password>
 JWT_SECRET_BASE64=<secret-base64-256-bit-o-mas>
 CORS_ALLOWED_ORIGINS=https://<tu-frontend>.vercel.app,https://<tu-frontend>.netlify.app
+FIREBASE_API_KEY=<firebase-web-api-key>
+FIREBASE_ALLOWED_UIDS=<uid_admin_1,uid_admin_2>
 ```
 
 Opcional:
@@ -201,8 +207,14 @@ Variables frontend:
 
 ```env
 VITE_API_BASE_URL=https://<tu-backend-render>.onrender.com
+VITE_LOGIN_PATH=/acceso-admin-9x7p
+VITE_ADMIN_PATH=/panel-admin-9x7p
 VITE_CLOUDINARY_CLOUD_NAME=<tu-cloud-name>
 VITE_CLOUDINARY_UPLOAD_PRESET=<tu-upload-preset-unsigned>
+VITE_FIREBASE_API_KEY=<firebase-web-api-key>
+VITE_FIREBASE_AUTH_DOMAIN=<tu-proyecto>.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=<tu-project-id>
+VITE_FIREBASE_APP_ID=<firebase-app-id>
 ```
 
 El repo incluye archivos para SPA routing:
@@ -217,6 +229,7 @@ Publicos:
 - `GET /api/public/appointments/occupied?serviceId=<UUID>&date=<YYYY-MM-DD>`
 - `POST /api/public/appointments`
 - `POST /api/auth/login`
+- `POST /api/auth/login/firebase`
 
 Admin (JWT Bearer):
 - `GET /api/admin/appointments`
@@ -327,6 +340,11 @@ curl -X PATCH http://localhost:8080/api/admin/appointments/<APPOINTMENT_ID>/stat
 - Los botones `Descargar` de `Turnos` e `Ingresos` exportan solo el mes seleccionado.
 - En Admin > Turnos, hay refresco automatico periodico y toast de nuevos turnos.
 - En booking publico, un horario reservado desaparece inmediatamente y tambien se recalcula automaticamente desde backend.
+- Login admin migrado a Firebase Authentication (Google + SMS OTP) con reCAPTCHA invisible.
+- El input OTP usa `autoComplete=\"one-time-code\"` para autocompletado nativo en iOS.
+- Acceso admin Firebase restringido por UIDs permitidos (`FIREBASE_ALLOWED_UIDS`); usuarios no listados reciben `Usuario no encontrado`.
+- Rutas frontend de acceso admin/login parametrizadas (`VITE_ADMIN_PATH`, `VITE_LOGIN_PATH`) para evitar rutas publicas obvias.
+- Navegacion anchor ajustada con scroll suave y anclaje al encabezado real de cada seccion para evitar huecos visuales.
 
 ## Pre-commit secret scan (recommended)
 

@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { Scissors } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const Hero = () => {
@@ -68,7 +67,11 @@ const Hero = () => {
             </Button>
           </a>
           <a href="#services">
-            <Button variant="outline" size="lg" className="border-primary/30 text-primary hover:bg-primary/10 px-8 py-6 text-base">
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-primary/40 bg-background/40 text-primary hover:bg-primary/15 hover:text-primary hover:border-primary/60 px-8 py-6 text-base"
+            >
               Ver Servicios
             </Button>
           </a>

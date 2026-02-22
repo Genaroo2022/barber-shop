@@ -47,6 +47,16 @@ public class JwtService {
         }
     }
 
+    public Optional<String> extractStringClaim(String token, String claimKey) {
+        try {
+            Claims claims = parseClaims(token);
+            Object value = claims.get(claimKey);
+            return value == null ? Optional.empty() : Optional.of(value.toString());
+        } catch (Exception ignored) {
+            return Optional.empty();
+        }
+    }
+
     public boolean isValid(String token) {
         try {
             parseClaims(token);

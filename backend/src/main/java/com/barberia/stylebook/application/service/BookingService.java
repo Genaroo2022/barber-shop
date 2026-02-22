@@ -19,10 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.EnumSet;
 import java.util.List;
 
 @Service
 public class BookingService {
+    private static final EnumSet<AppointmentStatus> SLOT_OCCUPYING_STATUSES =
+            EnumSet.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED);
 
     private final ClientRepository clientRepository;
     private final ServiceCatalogRepository serviceCatalogRepository;
@@ -55,7 +58,11 @@ public class BookingService {
         }
 
         OffsetDateTime appointmentAt = request.appointmentAt().withSecond(0).withNano(0);
-        if (appointmentRepository.existsByServiceIdAndAppointmentAt(service.getId(), appointmentAt)) {
+        if (appointmentRepository.existsByServiceIdAndAppointmentAtAndStatusIn(
+                service.getId(),
+                appointmentAt,
+                SLOT_OCCUPYING_STATUSES
+        )) {
             throw new BusinessRuleException("Ya existe un turno para ese servicio en esa fecha/hora");
         }
 
@@ -98,7 +105,7 @@ public class BookingService {
         return appointmentRepository
                 .findAllByServiceIdAndAppointmentAtGreaterThanEqualAndAppointmentAtLessThan(service.getId(), from, to)
                 .stream()
-                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
+                .filter(appointment -> SLOT_OCCUPYING_STATUSES.contains(appointment.getStatus()))
                 .map(appointment -> new PublicOccupiedAppointmentResponse(appointment.getAppointmentAt()))
                 .toList();
     }

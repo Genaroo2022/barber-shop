@@ -35,24 +35,28 @@ class AdminAppointmentServiceTest {
     private AdminAppointmentService service;
 
     @Test
-    void updateStatus_allowsPendingToConfirmed() {
+    void updateStatus_allowsAnyTransition() {
         UUID appointmentId = UUID.randomUUID();
-        Appointment appointment = buildAppointment(AppointmentStatus.PENDING);
+        Appointment appointment = buildAppointment(AppointmentStatus.CANCELLED);
 
         when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(appointment));
+        when(appointmentRepository.existsByServiceIdAndAppointmentAtAndStatusInAndIdNot(any(), any(), any(), any()))
+                .thenReturn(false);
         when(appointmentRepository.save(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        AppointmentResponse response = service.updateStatus(appointmentId, AppointmentStatus.CONFIRMED);
+        AppointmentResponse response = service.updateStatus(appointmentId, AppointmentStatus.PENDING);
 
-        assertEquals(AppointmentStatus.CONFIRMED, response.status());
+        assertEquals(AppointmentStatus.PENDING, response.status());
         verify(appointmentRepository).save(appointment);
     }
 
     @Test
-    void updateStatus_rejectsInvalidTransition() {
+    void updateStatus_rejectsWhenTargetStatusWouldCollideWithActiveAppointment() {
         UUID appointmentId = UUID.randomUUID();
-        Appointment appointment = buildAppointment(AppointmentStatus.COMPLETED);
+        Appointment appointment = buildAppointment(AppointmentStatus.CANCELLED);
         when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(appointment));
+        when(appointmentRepository.existsByServiceIdAndAppointmentAtAndStatusInAndIdNot(any(), any(), any(), any()))
+                .thenReturn(true);
 
         assertThrows(
                 BusinessRuleException.class,

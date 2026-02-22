@@ -123,6 +123,7 @@ Public endpoints:
 - `POST /api/public/appointments`
 - `GET /api/public/appointments/occupied`
 - `POST /api/auth/login`
+- `POST /api/auth/login/firebase`
 
 Admin endpoints require Bearer token:
 - `/api/admin/**`
@@ -173,6 +174,10 @@ npm run build
   - Public booking anti-abuse: `BookingRateLimiter` by client IP
   - Admin appointments tab: periodic polling + toast when new appointments arrive
   - Rate-limit tests for booking/login
+  - Admin auth migrated to Firebase (Google + phone/SMS OTP with invisible reCAPTCHA)
+  - Backend pre-registration gate for Firebase login via `FIREBASE_ALLOWED_UIDS`
+  - Frontend private route aliases for admin/login via `VITE_ADMIN_PATH` and `VITE_LOGIN_PATH`
+  - Landing anchor navigation tuned: smoother scroll + corrected section anchor targets
 - Backend migrations must run automatically at startup.
   - Current implementation uses `backend/src/main/java/com/barberia/stylebook/config/SchemaMigrationConfig.java`.
   - Keep migration scripts in `backend/src/main/resources/db/migration` (`V1`, `V2`, `V3` currently).

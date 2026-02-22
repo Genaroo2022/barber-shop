@@ -1,4 +1,5 @@
 import { clearAccessToken, getAccessToken } from "@/lib/auth";
+import { LOGIN_ROUTE } from "@/lib/routes";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
@@ -42,8 +43,8 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
   if (!response.ok) {
     if (options.auth && (response.status === 401 || response.status === 403)) {
       clearAccessToken();
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        window.location.assign("/login");
+      if (typeof window !== "undefined" && window.location.pathname !== LOGIN_ROUTE) {
+        window.location.assign(LOGIN_ROUTE);
       }
     }
     const message = payload?.error || "Error de servidor";
@@ -139,6 +140,13 @@ export async function login(email: string, password: string): Promise<LoginRespo
   return apiRequest<LoginResponse>("/api/auth/login", {
     method: "POST",
     body: { email, password },
+  });
+}
+
+export async function loginWithFirebase(idToken: string): Promise<LoginResponse> {
+  return apiRequest<LoginResponse>("/api/auth/login/firebase", {
+    method: "POST",
+    body: { idToken },
   });
 }
 

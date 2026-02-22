@@ -2,6 +2,7 @@ package com.barberia.stylebook.web;
 
 import com.barberia.stylebook.application.service.AuthService;
 import com.barberia.stylebook.security.ClientIpResolver;
+import com.barberia.stylebook.web.dto.FirebaseLoginRequest;
 import com.barberia.stylebook.web.dto.LoginRequest;
 import com.barberia.stylebook.web.dto.LoginResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,5 +29,14 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         String clientIp = clientIpResolver.resolve(httpRequest);
         return ResponseEntity.ok(authService.login(request.email(), request.password(), clientIp));
+    }
+
+    @PostMapping("/login/firebase")
+    public ResponseEntity<LoginResponse> loginWithFirebase(
+            @Valid @RequestBody FirebaseLoginRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String clientIp = clientIpResolver.resolve(httpRequest);
+        return ResponseEntity.ok(authService.loginWithFirebase(request.idToken(), clientIp));
     }
 }

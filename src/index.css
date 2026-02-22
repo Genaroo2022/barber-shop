@@ -57,11 +57,24 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 0.5rem;
+  }
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
+  [id] {
+    scroll-margin-top: 0.5rem;
+  }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }
 

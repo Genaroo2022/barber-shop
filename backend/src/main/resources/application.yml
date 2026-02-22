@@ -18,5 +18,8 @@ server:
 app:
   jwt:
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:28800}
+  firebase:
+    api-key: ${FIREBASE_API_KEY:}
+    allowed-uids: ${FIREBASE_ALLOWED_UIDS:}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

@@ -286,7 +286,6 @@ const AppointmentsTab = () => {
             ) : (
               filteredAppointments.map((apt) => {
                 const date = new Date(apt.appointmentAt);
-                const canEdit = apt.status !== "COMPLETED" && apt.status !== "CANCELLED";
 
                 return (
                   <TableRow key={apt.id} className="border-border">
@@ -348,7 +347,6 @@ const AppointmentsTab = () => {
                           className="h-8 w-8 p-0"
                           onClick={() => startEdit(apt)}
                           title="Editar turno"
-                          disabled={!canEdit}
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>

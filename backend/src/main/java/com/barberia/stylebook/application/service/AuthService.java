@@ -9,6 +9,7 @@ import com.barberia.stylebook.web.dto.LoginResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.Map;
 
@@ -19,17 +20,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final LoginRateLimiter loginRateLimiter;
+    private final FirebaseIdentityService firebaseIdentityService;
 
     public AuthService(
             AdminUserRepository adminUserRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            LoginRateLimiter loginRateLimiter
+            LoginRateLimiter loginRateLimiter,
+            FirebaseIdentityService firebaseIdentityService
     ) {
         this.adminUserRepository = adminUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.loginRateLimiter = loginRateLimiter;
+        this.firebaseIdentityService = firebaseIdentityService;
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +53,31 @@ public class AuthService {
 
         long expiresIn = jwtService.getExpirationSeconds();
         String token = jwtService.generateToken(user.getEmail(), Map.of("role", user.getRole()));
+        return new LoginResponse(token, "Bearer", expiresIn);
+    }
+
+    @Transactional(readOnly = true)
+    public LoginResponse loginWithFirebase(String idToken, String clientIp) {
+        FirebaseIdentityService.FirebaseIdentity identity = firebaseIdentityService.lookupByIdToken(idToken);
+        String limiterKey = StringUtils.hasText(identity.email())
+                ? identity.email().trim().toLowerCase()
+                : StringUtils.hasText(identity.phoneNumber())
+                        ? identity.phoneNumber().trim()
+                        : "uid:" + identity.uid();
+        loginRateLimiter.checkAllowed(clientIp, limiterKey);
+
+        if (!firebaseIdentityService.isUidAllowed(identity.uid())) {
+            loginRateLimiter.recordFailure(clientIp, limiterKey);
+            throw new BusinessRuleException("Usuario no encontrado");
+        }
+
+        loginRateLimiter.recordSuccess(clientIp, limiterKey);
+
+        String subject = StringUtils.hasText(identity.email())
+                ? identity.email().trim().toLowerCase()
+                : "firebase:" + identity.uid();
+        long expiresIn = jwtService.getExpirationSeconds();
+        String token = jwtService.generateToken(subject, Map.of("role", "ADMIN", "firebaseUid", identity.uid()));
         return new LoginResponse(token, "Bearer", expiresIn);
     }
 }

@@ -5,6 +5,7 @@ import com.barberia.stylebook.domain.enums.AppointmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,9 +23,18 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
             OffsetDateTime to
     );
 
-    boolean existsByServiceIdAndAppointmentAt(UUID serviceId, OffsetDateTime appointmentAt);
+    boolean existsByServiceIdAndAppointmentAtAndStatusIn(
+            UUID serviceId,
+            OffsetDateTime appointmentAt,
+            Collection<AppointmentStatus> statuses
+    );
 
-    boolean existsByServiceIdAndAppointmentAtAndIdNot(UUID serviceId, OffsetDateTime appointmentAt, UUID id);
+    boolean existsByServiceIdAndAppointmentAtAndStatusInAndIdNot(
+            UUID serviceId,
+            OffsetDateTime appointmentAt,
+            Collection<AppointmentStatus> statuses,
+            UUID id
+    );
 
     boolean existsByServiceId(UUID serviceId);
 

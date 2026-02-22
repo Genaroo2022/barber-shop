@@ -15,11 +15,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class AdminAppointmentService {
+    private static final EnumSet<AppointmentStatus> SLOT_OCCUPYING_STATUSES =
+            EnumSet.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED);
 
     private final AppointmentRepository appointmentRepository;
     private final ServiceCatalogRepository serviceCatalogRepository;
@@ -47,7 +50,14 @@ public class AdminAppointmentService {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new NotFoundException("Turno no encontrado"));
 
-        validateTransition(appointment.getStatus(), targetStatus);
+        if (occupiesSlot(targetStatus) && appointmentRepository.existsByServiceIdAndAppointmentAtAndStatusInAndIdNot(
+                appointment.getService().getId(),
+                appointment.getAppointmentAt(),
+                SLOT_OCCUPYING_STATUSES,
+                appointmentId
+        )) {
+            throw new BusinessRuleException("Ya existe un turno para ese servicio en esa fecha/hora");
+        }
         appointment.setStatus(targetStatus);
         return AppointmentMapper.toResponse(appointmentRepository.save(appointment));
     }
@@ -56,10 +66,6 @@ public class AdminAppointmentService {
     public AppointmentResponse update(UUID appointmentId, AdminAppointmentUpsertRequest request) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new NotFoundException("Turno no encontrado"));
-
-        if (appointment.getStatus() == AppointmentStatus.COMPLETED || appointment.getStatus() == AppointmentStatus.CANCELLED) {
-            throw new BusinessRuleException("No se puede editar un turno completado o cancelado");
-        }
 
         String normalizedClientName = request.clientName().trim();
         String normalizedClientPhone = request.clientPhone().trim();
@@ -75,7 +81,12 @@ public class AdminAppointmentService {
         }
 
         OffsetDateTime appointmentAt = request.appointmentAt().withSecond(0).withNano(0);
-        if (appointmentRepository.existsByServiceIdAndAppointmentAtAndIdNot(service.getId(), appointmentAt, appointmentId)) {
+        if (occupiesSlot(appointment.getStatus()) && appointmentRepository.existsByServiceIdAndAppointmentAtAndStatusInAndIdNot(
+                service.getId(),
+                appointmentAt,
+                SLOT_OCCUPYING_STATUSES,
+                appointmentId
+        )) {
             throw new BusinessRuleException("Ya existe un turno para ese servicio en esa fecha/hora");
         }
 
@@ -107,18 +118,7 @@ public class AdminAppointmentService {
         appointmentRepository.delete(appointment);
     }
 
-    private void validateTransition(AppointmentStatus current, AppointmentStatus target) {
-        if (current == target) {
-            return;
-        }
-        if (current == AppointmentStatus.PENDING &&
-                (target == AppointmentStatus.CONFIRMED || target == AppointmentStatus.CANCELLED)) {
-            return;
-        }
-        if (current == AppointmentStatus.CONFIRMED &&
-                (target == AppointmentStatus.COMPLETED || target == AppointmentStatus.CANCELLED)) {
-            return;
-        }
-        throw new BusinessRuleException("Transicion de estado invalida: " + current + " -> " + target);
+    private boolean occupiesSlot(AppointmentStatus status) {
+        return SLOT_OCCUPYING_STATUSES.contains(status);
     }
 }

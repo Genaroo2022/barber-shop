@@ -37,23 +37,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith(PREFIX)) {
             String token = header.substring(PREFIX.length());
             if (jwtService.isValid(token)) {
-                jwtService.extractSubject(token).ifPresent(subject -> {
-                    adminUserRepository.findByEmailIgnoreCase(subject)
-                            .filter(user -> Boolean.TRUE.equals(user.getActive()))
-                            .map(AdminUser::getRole)
-                            .filter(role -> "ADMIN".equalsIgnoreCase(role))
-                            .ifPresent(role -> {
-                                var auth = new UsernamePasswordAuthenticationToken(
-                                        subject,
-                                        null,
-                                        List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
-                                );
-                                SecurityContextHolder.getContext().setAuthentication(auth);
-                            });
-                });
+                boolean isAdminRole = jwtService.extractStringClaim(token, "role")
+                        .map(role -> "ADMIN".equalsIgnoreCase(role))
+                        .orElse(false);
+                if (isAdminRole) {
+                    boolean isFirebaseToken = jwtService.extractStringClaim(token, "firebaseUid").isPresent();
+                    jwtService.extractSubject(token).ifPresent(subject -> {
+                        if (isFirebaseToken) {
+                            setAdminAuthentication(subject);
+                            return;
+                        }
+
+                        adminUserRepository.findByEmailIgnoreCase(subject)
+                                .filter(user -> Boolean.TRUE.equals(user.getActive()))
+                                .map(AdminUser::getRole)
+                                .filter(role -> "ADMIN".equalsIgnoreCase(role))
+                                .ifPresent(role -> setAdminAuthentication(subject));
+                    });
+                }
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void setAdminAuthentication(String principal) {
+        var auth = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CalendarIcon, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
@@ -24,6 +24,10 @@ const timeSlots = [
   "10:30",
   "11:00",
   "11:30",
+  "12:00",
+  "12:30",
+  "13:00",
+  "13:30",
   "14:00",
   "14:30",
   "15:00",
@@ -70,6 +74,7 @@ const BookingForm = () => {
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [occupiedSlots, setOccupiedSlots] = useState<Set<string>>(new Set());
+  const [loadingOccupiedSlots, setLoadingOccupiedSlots] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
 
   useEffect(() => {
@@ -112,14 +117,22 @@ const BookingForm = () => {
     return err.message || fallback;
   };
 
-  const fetchOccupiedSlots = async (selectedServiceId: string, selectedDate: string) => {
-    const occupied = await listPublicOccupiedAppointments(selectedServiceId, selectedDate);
-    const next = new Set(occupied.map((item) => format(new Date(item.appointmentAt), "HH:mm")));
-    setOccupiedSlots(next);
-    if (time && next.has(time)) {
-      setTime("");
-    }
-  };
+  const fetchOccupiedSlots = useCallback(
+    async (selectedServiceId: string, selectedDate: string) => {
+      setLoadingOccupiedSlots(true);
+      try {
+        const occupied = await listPublicOccupiedAppointments(selectedServiceId, selectedDate);
+        const next = new Set(occupied.map((item) => format(new Date(item.appointmentAt), "HH:mm")));
+        setOccupiedSlots(next);
+        if (time && next.has(time)) {
+          setTime("");
+        }
+      } finally {
+        setLoadingOccupiedSlots(false);
+      }
+    },
+    [time]
+  );
 
   const markCurrentSlotAsOccupied = (slot: string) => {
     setOccupiedSlots((prev) => {
@@ -132,6 +145,8 @@ const BookingForm = () => {
   useEffect(() => {
     if (!serviceId || !selectedDateKey) {
       setOccupiedSlots(new Set());
+      setLoadingOccupiedSlots(false);
+      setTime("");
       return;
     }
 
@@ -149,7 +164,14 @@ const BookingForm = () => {
       void load();
     }, 15000);
     return () => clearInterval(interval);
-  }, [serviceId, selectedDateKey]);
+  }, [fetchOccupiedSlots, serviceId, selectedDateKey]);
+
+  const refreshOccupiedSlotsIfReady = useCallback(() => {
+    if (!serviceId || !selectedDateKey) return;
+    void fetchOccupiedSlots(serviceId, selectedDateKey).catch(() => {
+      // ignore manual refresh failures while opening the selector
+    });
+  }, [fetchOccupiedSlots, serviceId, selectedDateKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,9 +259,10 @@ const BookingForm = () => {
   }
 
   return (
-    <section id="booking" className="py-24">
+    <section className="py-24">
       <div className="container px-6">
         <motion.div
+          id="booking"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -355,15 +378,25 @@ const BookingForm = () => {
             <Label className="text-foreground/80">Horario</Label>
             <Select
               value={time}
+              disabled={!serviceId || !date || loadingOccupiedSlots}
               onValueChange={(value) => {
                 setTime(value);
                 setFieldErrors((prev) => ({ ...prev, time: undefined }));
               }}
             >
               <SelectTrigger
+                onClick={refreshOccupiedSlotsIfReady}
                 className={`bg-secondary/50 border-border/50 ${fieldErrors.time ? "border-destructive ring-destructive" : ""}`}
               >
-                <SelectValue placeholder="Elige un horario" />
+                <SelectValue
+                  placeholder={
+                    !serviceId || !date
+                      ? "Primero selecciona servicio y fecha"
+                      : loadingOccupiedSlots
+                        ? "Actualizando horarios..."
+                        : "Elige un horario"
+                  }
+                />
               </SelectTrigger>
               <SelectContent className="bg-card border-border">
                 {availableTimeSlots.map((slot) => (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Scissors, CalendarDays, Users, BarChart3, DollarSign, LogOut, Menu, X, Images, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import StatsTab from "@/components/admin/StatsTab";
 import IncomeTab from "@/components/admin/IncomeTab";
 import ServicesTab from "@/components/admin/ServicesTab";
 import GalleryTab from "@/components/admin/GalleryTab";
-import { clearAccessToken, isAuthenticated } from "@/lib/auth";
+import { clearAccessToken } from "@/lib/auth";
 
 const tabs = [
   { id: "appointments", label: "Turnos", icon: CalendarDays },
@@ -23,12 +23,6 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState("appointments");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login");
-    }
-  }, [navigate]);
 
   const handleLogout = () => {
     clearAccessToken();

@@ -14,7 +14,7 @@ type VisualService = {
 
 const fallbackDescriptions: Record<string, string> = {
   "corte de cabello": "Corte profesional adaptado a tu estilo y tipo de rostro",
-  "perfilado de barba": "Diseño y perfilado de barba con navaja y máquina",
+  "perfilado de barba": "DiseÃ±o y perfilado de barba con navaja y mÃ¡quina",
   "corte + barba": "El combo completo para lucir impecable de pies a cabeza",
 };
 
@@ -29,7 +29,7 @@ const fallbackCatalog: VisualService[] = [
   {
     id: "fallback-2",
     name: "Perfilado de Barba",
-    description: "Diseño y perfilado de barba con navaja y máquina",
+    description: "DiseÃ±o y perfilado de barba con navaja y mÃ¡quina",
     priceLabel: "$3.000",
     icon: SparkleIcon,
   },

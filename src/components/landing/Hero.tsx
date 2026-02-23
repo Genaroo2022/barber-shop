@@ -43,7 +43,7 @@ const Hero = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-muted-foreground text-lg md:text-xl max-w-md mx-auto mb-4"
         >
-          Estilo profesional a domicilio. Tu mejor versión empieza aquí.
+          Estilo profesional a domicilio. Tu mejor versiÃ³n empieza aquÃ­.
         </motion.p>
 
         <motion.p

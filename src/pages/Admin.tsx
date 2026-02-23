@@ -16,7 +16,7 @@ const tabs = [
   { id: "stats", label: "Estadisticas", icon: BarChart3 },
   { id: "income", label: "Ingresos", icon: DollarSign },
   { id: "services", label: "Servicios", icon: Tag },
-  { id: "gallery", label: "Galeria", icon: Images },
+  { id: "gallery", label: "Galería", icon: Images },
 ];
 
 const Admin = () => {

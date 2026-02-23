@@ -63,6 +63,14 @@ const phoneHasValidCharacters = (phone: string): boolean =>
 
 const sanitizePhoneDigits = (value: string): string => value.replace(/\D/g, "");
 
+const getNameValidationMessage = (rawName: string): string | null => {
+  const normalizedName = rawName.trim().replace(/\s+/g, " ");
+  if (!normalizedName) return "Completa tu nombre";
+  if (normalizedName.length < 2) return "Nombre invalido (minimo 2 caracteres)";
+  if (normalizedName.length > 40) return "Nombre invalido (maximo 40 caracteres)";
+  return null;
+};
+
 const getPhoneValidationMessage = (rawPhone: string): string | null => {
   const phone = rawPhone.trim();
   if (!phone) return "Completá tu teléfono";
@@ -255,7 +263,8 @@ const BookingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: FormErrors = {};
-    if (!name.trim()) errors.name = "Completa tu nombre";
+    const nameError = getNameValidationMessage(name);
+    if (nameError) errors.name = nameError;
     const phoneError = getPhoneValidationMessage(phone);
     if (phoneError) errors.phone = phoneError;
     if (!serviceId) errors.serviceId = "Selecciona un servicio";
@@ -395,8 +404,12 @@ const BookingForm = () => {
               placeholder="Tu nombre"
               value={name}
               onChange={(e) => {
-                setName(e.target.value);
-                setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                const value = e.target.value;
+                setName(value);
+                setFieldErrors((prev) => {
+                  if (!prev.name) return prev;
+                  return { ...prev, name: getNameValidationMessage(value) ?? undefined };
+                });
               }}
               className={`bg-secondary/50 border-border/50 focus:border-primary ${errorClass(Boolean(fieldErrors.name))}`}
             />

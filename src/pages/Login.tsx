@@ -13,9 +13,12 @@ import { ADMIN_ROUTE } from "@/lib/routes";
 
 const PHONE_E164_REGEX = /^\+[1-9]\d{7,14}$/;
 const normalizePhoneForFirebase = (value: string): string => value.replace(/[^\d+]/g, "");
+const PHONE_PREFIX = "+54 9 11";
+const formatLocalPhone = (digits: string): string =>
+  digits.length <= 4 ? digits : `${digits.slice(0, 4)} ${digits.slice(4, 8)}`;
 
 const Login = () => {
-  const [phoneNumber, setPhoneNumber] = useState("+54 9 11 ");
+  const [localPhoneDigits, setLocalPhoneDigits] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
@@ -96,7 +99,7 @@ const Login = () => {
 
   const handleSendCode = async (event: React.FormEvent) => {
     event.preventDefault();
-    const normalizedPhone = normalizePhoneForFirebase(phoneNumber.trim());
+    const normalizedPhone = normalizePhoneForFirebase(`${PHONE_PREFIX}${localPhoneDigits}`);
     if (!PHONE_E164_REGEX.test(normalizedPhone)) {
       toast.error("Numero invalido. Usa formato internacional, por ejemplo +54 9 11 1234 5678");
       return;
@@ -169,14 +172,23 @@ const Login = () => {
           {!confirmationResult ? (
             <form onSubmit={handleSendCode} className="space-y-3">
               <div className="space-y-2">
-             
-                <Input
-                  type="tel"
-                  placeholder="+54 9 11 1234 5678"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="bg-white text-black placeholder:text-gray-500 border-gray-300 focus:border-primary"
-                />
+                <Label className="text-foreground/80">Telefono</Label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-2 flex items-center">
+                    <span className="inline-flex h-7 items-center rounded-md border border-primary/40 bg-secondary/80 px-2 text-xs font-semibold text-primary whitespace-nowrap leading-none">
+                      {PHONE_PREFIX}
+                    </span>
+                  </div>
+                  <Input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="1234 5678"
+                    value={formatLocalPhone(localPhoneDigits)}
+                    onChange={(e) => setLocalPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                    className="bg-secondary/80 text-foreground placeholder:text-muted-foreground border-primary/30 focus:border-primary pl-28"
+                    style={{ fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" }}
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">Ejemplo: +54 9 11 1234 5678</p>
               </div>
               <Button
@@ -186,7 +198,7 @@ const Login = () => {
                 className="w-full border-primary/40 bg-background/40 text-primary hover:bg-primary/15 hover:text-primary hover:border-primary/60"
               >
                 <Smartphone className="w-4 h-4 mr-2" />
-                {loadingPhone ? "Enviando..." : "Enviar codigo SMS"}
+                {loadingPhone ? "Enviando..." : "Enviar código SMS"}
               </Button>
             </form>
           ) : (

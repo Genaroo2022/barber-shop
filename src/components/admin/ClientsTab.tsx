@@ -240,7 +240,7 @@ const ClientsTab = () => {
             />
             {formErrors.name && <p className="text-xs text-destructive">{formErrors.name}</p>}
             <Input
-              placeholder="Telefono"
+              placeholder="Télefono"
               value={form.phone}
               onChange={(e) => {
                 setForm((prev) => ({ ...prev, phone: e.target.value }));

@@ -65,9 +65,9 @@ const sanitizePhoneDigits = (value: string): string => value.replace(/\D/g, "");
 
 const getPhoneValidationMessage = (rawPhone: string): string | null => {
   const phone = rawPhone.trim();
-  if (!phone) return "Completa tu telefono";
-  if (!phoneHasValidCharacters(phone)) return "Telefono invalido (solo numeros, +, (), -, espacios)";
-  if (!phoneHasValidLength(phone)) return "Telefono invalido (entre 8 y 15 digitos)";
+  if (!phone) return "Completá tu teléfono";
+  if (!phoneHasValidCharacters(phone)) return "Teléfono inválido (solo números, +, (), -, espacios)";
+  if (!phoneHasValidLength(phone)) return "Teléfono inválido (entre 8 y 15 dígitos)";
   return null;
 };
 
@@ -120,12 +120,12 @@ const BookingForm = () => {
     if (!whatsappBusinessPhone || !submitted || !selectedServiceName || !selectedDateLabel || !time) return "";
 
     const messageLines = [
-      "Hola! Ya reserve mi turno desde la web y quiero confirmarlo por WhatsApp.",
+      "¡Hola! Ya reservé mi turno desde la web y quiero confirmarlo por WhatsApp.",
       `Nombre: ${name.trim()}`,
       `Servicio: ${selectedServiceName}`,
       `Fecha: ${selectedDateLabel}`,
       `Horario: ${time}hs`,
-      `Telefono: ${phone.trim()}`,
+      `Teléfono: ${phone.trim()}`,
     ];
 
     const encodedMessage = encodeURIComponent(messageLines.join("\n"));
@@ -165,7 +165,7 @@ const BookingForm = () => {
 
     const normalized = err.message.toLowerCase();
     if (normalized.includes("ya existe un turno para ese servicio en esa fecha/hora")) {
-      return "Ese horario ya fue tomado para el servicio seleccionado. Elegi otro horario para evitar doble reserva.";
+      return "Ese horario ya fue tomado para el servicio seleccionado. Elegí otro horario para evitar doble reserva.";
     }
     if (normalized.includes("demasiadas reservas")) {
       return err.message;
@@ -283,7 +283,7 @@ const BookingForm = () => {
       setRedirectCancelled(false);
       setRedirectCountdown(null);
       setSubmitted(true);
-      toast.success("Turno reservado con exito");
+      toast.success("Turno reservado con éxito");
     } catch (err) {
       toast.error(getBookingErrorMessage(err));
       if (serviceId && selectedDateKey) {
@@ -313,7 +313,7 @@ const BookingForm = () => {
             <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-6" />
             <h3 className="text-2xl font-display font-bold mb-3">Turno confirmado</h3>
             <p className="text-muted-foreground mb-2">
-              {name}, tu turno para <span className="text-primary">{selectedServiceName}</span> esta agendado.
+              {name}, tu turno para <span className="text-primary">{selectedServiceName}</span> está agendado.
             </p>
             <p className="text-muted-foreground">
               {selectedDateLabel} a las {time}hs
@@ -321,10 +321,10 @@ const BookingForm = () => {
             {whatsappHref ? (
               <>
                 <p className="text-muted-foreground mt-4">
-                  Tu turno quedo registrado correctamente.
+                  Tu turno quedó registrado correctamente.
                 </p>
                 <p className="text-muted-foreground">
-                  En unos segundos te vamos a redirigir a WhatsApp para enviar la confirmacion al barbero.
+                  En unos segundos te vamos a redirigir a WhatsApp para enviar la confirmación al barbero.
                 </p>
                 {redirectCountdown !== null && (
                   <p className="text-primary font-semibold mt-2">
@@ -355,7 +355,7 @@ const BookingForm = () => {
                 setRedirectCountdown(null);
               }}
             >
-              Volver al inicio
+              Volver al Inicio
             </Button>
           </motion.div>
         </div>
@@ -405,11 +405,11 @@ const BookingForm = () => {
 
           <div className="space-y-2">
             <Label htmlFor="phone" className="text-foreground/80">
-              Telefono
+              Teléfono
             </Label>
             <Input
               id="phone"
-              placeholder="Tu numero de telefono"
+              placeholder="Tu número de teléfono"
               value={phone}
               onChange={(e) => {
                 const value = e.target.value;
@@ -496,10 +496,10 @@ const BookingForm = () => {
                 <SelectValue
                   placeholder={
                     !serviceId || !date
-                      ? "Primero selecciona servicio y fecha"
+                      ? "Primero seleccioná servicio y fecha"
                       : loadingOccupiedSlots
                         ? "Actualizando horarios..."
-                        : "Elige un horario"
+                        : "Elegí un horario"
                   }
                 />
               </SelectTrigger>

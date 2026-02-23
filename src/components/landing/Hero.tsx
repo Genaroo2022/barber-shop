@@ -43,7 +43,7 @@ const Hero = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-muted-foreground text-lg md:text-xl max-w-md mx-auto mb-4"
         >
-          Estilo profesional a domicilio. Tu mejor versiÃ³n empieza aquÃ­.
+          Estilo profesional a domicilio. Tu mejor versión empieza aquí.
         </motion.p>
 
         <motion.p
@@ -63,7 +63,7 @@ const Hero = () => {
         >
           <a href="#booking">
             <Button size="lg" className="gold-gradient text-primary-foreground font-semibold px-8 py-6 text-base hover:opacity-90 transition-opacity">
-              Reservar Turno
+              Reservar turno
             </Button>
           </a>
           <a href="#services">
@@ -72,7 +72,7 @@ const Hero = () => {
               size="lg"
               className="border-primary/40 bg-background/40 text-primary hover:bg-primary/15 hover:text-primary hover:border-primary/60 px-8 py-6 text-base"
             >
-              Ver Servicios
+              Ver servicios
             </Button>
           </a>
         </motion.div>

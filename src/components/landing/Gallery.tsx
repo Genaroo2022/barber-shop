@@ -11,12 +11,12 @@ type VisualGalleryItem = {
 };
 
 const fallbackGallery: VisualGalleryItem[] = [
-  { id: "fallback-1", title: "Fade Clasico", category: "Corte" },
-  { id: "fallback-2", title: "Pompadour Moderno", category: "Corte" },
-  { id: "fallback-3", title: "Barba Definida", category: "Barba" },
+  { id: "fallback-1", title: "Fade clásico", category: "Corte" },
+  { id: "fallback-2", title: "Pompadour moderno", category: "Corte" },
+  { id: "fallback-3", title: "Barba definida", category: "Barba" },
   { id: "fallback-4", title: "Undercut", category: "Corte" },
-  { id: "fallback-5", title: "Degrade + Diseno", category: "Corte" },
-  { id: "fallback-6", title: "Barba Full", category: "Barba" },
+  { id: "fallback-5", title: "Degradé + diseño", category: "Corte" },
+  { id: "fallback-6", title: "Barba full", category: "Barba" },
 ];
 
 const Gallery = () => {
@@ -54,9 +54,9 @@ const Gallery = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">Galeria</p>
+          <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">Galería</p>
           <h2 className="text-4xl md:text-5xl font-display font-bold">
-            Nuestros <span className="gold-text">Trabajos</span>
+            Nuestros <span className="gold-text">trabajos</span>
           </h2>
         </motion.div>
 
@@ -75,7 +75,7 @@ const Gallery = () => {
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-secondary/50">
                   <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
-                  <span className="text-muted-foreground/50 text-xs">Foto proximamente</span>
+                  <span className="text-muted-foreground/50 text-xs">Foto próximamente</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
@@ -89,7 +89,7 @@ const Gallery = () => {
         </div>
         {images.length === 0 && (
           <p className="text-center text-muted-foreground text-sm mt-8">
-            Proximamente fotos reales de nuestros trabajos
+            Próximamente, fotos reales de nuestros trabajos
           </p>
         )}
       </div>

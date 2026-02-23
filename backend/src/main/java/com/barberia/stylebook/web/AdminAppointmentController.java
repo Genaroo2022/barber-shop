@@ -3,6 +3,7 @@ package com.barberia.stylebook.web;
 import com.barberia.stylebook.application.service.AdminAppointmentService;
 import com.barberia.stylebook.web.dto.AdminAppointmentUpsertRequest;
 import com.barberia.stylebook.web.dto.AppointmentResponse;
+import com.barberia.stylebook.web.dto.StalePendingAppointmentResponse;
 import com.barberia.stylebook.web.dto.UpdateAppointmentStatusRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -32,6 +34,13 @@ public class AdminAppointmentController {
     @GetMapping
     public ResponseEntity<List<AppointmentResponse>> list() {
         return ResponseEntity.ok(adminAppointmentService.listAll());
+    }
+
+    @GetMapping("/stale-pending")
+    public ResponseEntity<List<StalePendingAppointmentResponse>> listStalePending(
+            @RequestParam(name = "olderThanMinutes", defaultValue = "30") int olderThanMinutes
+    ) {
+        return ResponseEntity.ok(adminAppointmentService.listStalePending(olderThanMinutes));
     }
 
     @PatchMapping("/{id}/status")

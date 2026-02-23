@@ -3,6 +3,7 @@ package com.barberia.stylebook.repository;
 import com.barberia.stylebook.domain.entity.Appointment;
 import com.barberia.stylebook.domain.enums.AppointmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -55,4 +56,26 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
             @Param("statuses") Collection<AppointmentStatus> statuses,
             @Param("createdFrom") OffsetDateTime createdFrom
     );
+
+    @Query("""
+            select a
+            from Appointment a
+            join fetch a.client c
+            join fetch a.service s
+            where a.status = :status
+              and a.createdAt <= :createdBefore
+            order by a.createdAt asc
+            """)
+    List<Appointment> findByStatusAndCreatedAtBeforeOrderByCreatedAtAsc(
+            @Param("status") AppointmentStatus status,
+            @Param("createdBefore") OffsetDateTime createdBefore
+    );
+
+    @Modifying
+    @Query(value = """
+            update appointments
+            set client_id = :targetClientId
+            where client_id = :sourceClientId
+            """, nativeQuery = true)
+    int reassignClient(@Param("sourceClientId") UUID sourceClientId, @Param("targetClientId") UUID targetClientId);
 }

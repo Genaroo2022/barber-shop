@@ -249,6 +249,7 @@ Publicos:
 
 Admin (JWT Bearer):
 - `GET /api/admin/appointments`
+- `GET /api/admin/appointments/stale-pending?olderThanMinutes=<int>`
 - `PUT /api/admin/appointments/{id}`
 - `PATCH /api/admin/appointments/{id}/status`
 - `DELETE /api/admin/appointments/{id}`
@@ -259,6 +260,7 @@ Admin (JWT Bearer):
 - `DELETE /api/admin/metrics/income/manual/{id}`
 - `GET /api/admin/metrics/clients` (compat endpoint)
 - `GET /api/admin/clients`
+- `POST /api/admin/clients/merge`
 - `PUT /api/admin/clients/{id}`
 - `DELETE /api/admin/clients/{id}`
 - `GET /api/admin/services`
@@ -354,6 +356,9 @@ curl -X PATCH http://localhost:8080/api/admin/appointments/<APPOINTMENT_ID>/stat
 - Si cambias la URL/puerto del backend, actualiza `VITE_API_BASE_URL`.
 - El CTA de confirmacion por WhatsApp usa `VITE_WHATSAPP_BOOKING_PHONE` y requiere formato solo digitos (ej: `5491122334455`).
 - Auto-reply de WhatsApp (backend) solo responde si el numero entrante coincide con un cliente con turno `PENDING/CONFIRMED` creado recientemente (ventana `WHATSAPP_AUTOREPLY_LOOKBACK_MINUTES`) y respeta cooldown por telefono (`WHATSAPP_AUTOREPLY_COOLDOWN_MINUTES`) para evitar respuestas indeseadas/repetidas.
+- Clientes se deduplican por telefono normalizado (solo digitos). El nombre ya no se pisa automaticamente en booking publico para evitar typos (`Matias` vs `Matiass`) sobre el mismo cliente.
+- En Admin > Clientes existe accion de fusion manual para combinar duplicados: reasigna turnos al cliente destino y elimina el origen.
+- En Admin > Turnos existe Asistente de Gestion (consulta on-demand, sin procesos en background) para detectar pendientes sin confirmar por umbral en minutos.
 - En admin, los KPIs/turnos/ingresos se consultan por mes con input tipo calendario mensual (`YYYY-MM`).
 - Los botones `Descargar` de `Turnos` e `Ingresos` exportan solo el mes seleccionado.
 - En Admin > Turnos, hay refresco automatico periodico y toast de nuevos turnos.

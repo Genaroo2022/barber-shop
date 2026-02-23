@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { ArrowRightLeft, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { deleteAdminClient, listAdminClients, updateAdminClient, type ClientSummary } from "@/lib/api";
+import { deleteAdminClient, listAdminClients, mergeAdminClients, updateAdminClient, type ClientSummary } from "@/lib/api";
 
 type ClientForm = {
   name: string;
@@ -24,6 +24,11 @@ type ClientForm = {
 type ClientFormErrors = {
   name?: string;
   phone?: string;
+};
+
+type MergeFormErrors = {
+  sourceClientId?: string;
+  targetClientId?: string;
 };
 
 const emptyForm: ClientForm = {
@@ -40,6 +45,11 @@ const ClientsTab = () => {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ClientSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeSourceId, setMergeSourceId] = useState("");
+  const [mergeTargetId, setMergeTargetId] = useState("");
+  const [merging, setMerging] = useState(false);
+  const [mergeErrors, setMergeErrors] = useState<MergeFormErrors>({});
 
   const fetchClients = async () => {
     try {
@@ -112,12 +122,51 @@ const ClientsTab = () => {
     }
   };
 
+  const handleMerge = async () => {
+    const errors: MergeFormErrors = {};
+    if (!mergeSourceId) errors.sourceClientId = "Selecciona cliente origen";
+    if (!mergeTargetId) errors.targetClientId = "Selecciona cliente destino";
+    if (mergeSourceId && mergeTargetId && mergeSourceId === mergeTargetId) {
+      errors.targetClientId = "Origen y destino deben ser distintos";
+    }
+
+    if (errors.sourceClientId || errors.targetClientId) {
+      setMergeErrors(errors);
+      toast.error("Selecciona cliente origen y destino");
+      return;
+    }
+
+    try {
+      setMerging(true);
+      setMergeErrors({});
+      await mergeAdminClients(mergeSourceId, mergeTargetId);
+      toast.success("Clientes fusionados");
+      setMergeOpen(false);
+      setMergeSourceId("");
+      setMergeTargetId("");
+      await fetchClients();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "No se pudo fusionar clientes";
+      toast.error(message);
+    } finally {
+      setMerging(false);
+    }
+  };
+
   if (loading) return <div className="text-muted-foreground">Cargando clientes...</div>;
   const errorClass = (hasError: boolean) => (hasError ? "border-destructive focus-visible:ring-destructive" : "");
 
   return (
-    <div className="glass-card rounded-xl overflow-hidden">
-      <Table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={() => setMergeOpen(true)}>
+          <ArrowRightLeft className="w-4 h-4 mr-2" />
+          Fusionar clientes
+        </Button>
+      </div>
+
+      <div className="glass-card rounded-xl overflow-hidden">
+        <Table>
         <TableHeader>
           <TableRow className="border-border hover:bg-transparent">
             <TableHead className="text-muted-foreground">Nombre</TableHead>
@@ -161,7 +210,8 @@ const ClientsTab = () => {
             ))
           )}
         </TableBody>
-      </Table>
+        </Table>
+      </div>
 
       <AlertDialog
         open={Boolean(editingClient)}
@@ -233,6 +283,76 @@ const ClientsTab = () => {
               disabled={deleting}
             >
               {deleting ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={mergeOpen}
+        onOpenChange={(open) => {
+          setMergeOpen(open);
+          if (!open) {
+            setMergeSourceId("");
+            setMergeTargetId("");
+            setMergeErrors({});
+          }
+        }}
+      >
+        <AlertDialogContent className="glass-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Fusionar clientes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Reasigna todos los turnos del cliente origen al cliente destino y elimina el origen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground">Cliente origen (se elimina)</label>
+            <select
+              value={mergeSourceId}
+              onChange={(e) => {
+                setMergeSourceId(e.target.value);
+                setMergeErrors((prev) => ({ ...prev, sourceClientId: undefined }));
+              }}
+              className={`w-full h-10 rounded-md border bg-background px-3 text-sm ${errorClass(Boolean(mergeErrors.sourceClientId))}`}
+            >
+              <option value="">Selecciona cliente origen</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.clientName} - {client.clientPhone}
+                </option>
+              ))}
+            </select>
+            {mergeErrors.sourceClientId && <p className="text-xs text-destructive">{mergeErrors.sourceClientId}</p>}
+
+            <label className="text-xs text-muted-foreground">Cliente destino (se conserva)</label>
+            <select
+              value={mergeTargetId}
+              onChange={(e) => {
+                setMergeTargetId(e.target.value);
+                setMergeErrors((prev) => ({ ...prev, targetClientId: undefined }));
+              }}
+              className={`w-full h-10 rounded-md border bg-background px-3 text-sm ${errorClass(Boolean(mergeErrors.targetClientId))}`}
+            >
+              <option value="">Selecciona cliente destino</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.clientName} - {client.clientPhone}
+                </option>
+              ))}
+            </select>
+            {mergeErrors.targetClientId && <p className="text-xs text-destructive">{mergeErrors.targetClientId}</p>}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={merging}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleMerge();
+              }}
+              disabled={merging}
+            >
+              {merging ? "Fusionando..." : "Fusionar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

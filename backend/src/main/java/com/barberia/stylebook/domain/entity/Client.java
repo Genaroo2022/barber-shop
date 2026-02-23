@@ -14,6 +14,9 @@ public class Client extends AuditableEntity {
     @Column(nullable = false, unique = true, length = 40)
     private String phone;
 
+    @Column(name = "phone_normalized", nullable = false, unique = true, length = 20)
+    private String phoneNormalized;
+
     public String getName() {
         return name;
     }
@@ -28,5 +31,13 @@ public class Client extends AuditableEntity {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getPhoneNormalized() {
+        return phoneNormalized;
+    }
+
+    public void setPhoneNormalized(String phoneNormalized) {
+        this.phoneNormalized = phoneNormalized;
     }
 }

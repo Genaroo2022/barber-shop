@@ -45,6 +45,7 @@ public class BookingService {
     public AppointmentResponse create(CreateAppointmentRequest request) {
         String normalizedClientName = request.clientName().trim();
         String normalizedClientPhone = request.clientPhone().trim();
+        String phoneNormalized = PhoneNormalizer.normalize(normalizedClientPhone);
         String normalizedNotes = request.notes() == null ? null : request.notes().trim();
         if (normalizedNotes != null && normalizedNotes.isEmpty()) {
             normalizedNotes = null;
@@ -66,15 +67,12 @@ public class BookingService {
             throw new BusinessRuleException("Ya existe un turno para ese servicio en esa fecha/hora");
         }
 
-        Client client = clientRepository.findByPhone(normalizedClientPhone)
-                .map(existing -> {
-                    existing.setName(normalizedClientName);
-                    return existing;
-                })
+        Client client = clientRepository.findByPhoneNormalized(phoneNormalized)
                 .orElseGet(() -> {
                     Client created = new Client();
                     created.setName(normalizedClientName);
                     created.setPhone(normalizedClientPhone);
+                    created.setPhoneNormalized(phoneNormalized);
                     return created;
                 });
 

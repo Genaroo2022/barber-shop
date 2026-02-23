@@ -11,9 +11,11 @@ import com.barberia.stylebook.repository.ClientRepository;
 import com.barberia.stylebook.repository.ServiceCatalogRepository;
 import com.barberia.stylebook.web.dto.AdminAppointmentUpsertRequest;
 import com.barberia.stylebook.web.dto.AppointmentResponse;
+import com.barberia.stylebook.web.dto.StalePendingAppointmentResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.EnumSet;
 import java.util.List;
@@ -45,6 +47,30 @@ public class AdminAppointmentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<StalePendingAppointmentResponse> listStalePending(int olderThanMinutes) {
+        if (olderThanMinutes < 1) {
+            throw new BusinessRuleException("El umbral minimo es 1 minuto");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime createdBefore = now.minusMinutes(olderThanMinutes);
+
+        return appointmentRepository
+                .findByStatusAndCreatedAtBeforeOrderByCreatedAtAsc(AppointmentStatus.PENDING, createdBefore)
+                .stream()
+                .map(appointment -> new StalePendingAppointmentResponse(
+                        appointment.getId(),
+                        appointment.getClient().getName(),
+                        appointment.getClient().getPhone(),
+                        appointment.getService().getName(),
+                        appointment.getAppointmentAt(),
+                        appointment.getCreatedAt(),
+                        Math.max(0, Duration.between(appointment.getCreatedAt(), now).toMinutes())
+                ))
+                .toList();
+    }
+
     @Transactional
     public AppointmentResponse updateStatus(UUID appointmentId, AppointmentStatus targetStatus) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
@@ -69,6 +95,7 @@ public class AdminAppointmentService {
 
         String normalizedClientName = request.clientName().trim();
         String normalizedClientPhone = request.clientPhone().trim();
+        String phoneNormalized = PhoneNormalizer.normalize(normalizedClientPhone);
         String normalizedNotes = request.notes() == null ? null : request.notes().trim();
         if (normalizedNotes != null && normalizedNotes.isEmpty()) {
             normalizedNotes = null;
@@ -90,15 +117,18 @@ public class AdminAppointmentService {
             throw new BusinessRuleException("Ya existe un turno para ese servicio en esa fecha/hora");
         }
 
-        Client client = clientRepository.findByPhone(normalizedClientPhone)
+        Client client = clientRepository.findByPhoneNormalized(phoneNormalized)
                 .map(existing -> {
                     existing.setName(normalizedClientName);
+                    existing.setPhone(normalizedClientPhone);
+                    existing.setPhoneNormalized(phoneNormalized);
                     return existing;
                 })
                 .orElseGet(() -> {
                     Client created = new Client();
                     created.setName(normalizedClientName);
                     created.setPhone(normalizedClientPhone);
+                    created.setPhoneNormalized(phoneNormalized);
                     return created;
                 });
 

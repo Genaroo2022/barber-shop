@@ -85,6 +85,16 @@ export type AppointmentItem = {
   notes?: string | null;
 };
 
+export type StalePendingAppointmentItem = {
+  id: string;
+  clientName: string;
+  clientPhone: string;
+  serviceName: string;
+  appointmentAt: string;
+  createdAt: string;
+  minutesPending: number;
+};
+
 export type PublicOccupiedAppointment = {
   appointmentAt: string;
 };
@@ -171,6 +181,13 @@ export async function listAdminAppointments(): Promise<AppointmentItem[]> {
   return apiRequest<AppointmentItem[]>("/api/admin/appointments", { auth: true });
 }
 
+export async function listAdminStalePendingAppointments(
+  olderThanMinutes: number
+): Promise<StalePendingAppointmentItem[]> {
+  const query = new URLSearchParams({ olderThanMinutes: String(olderThanMinutes) }).toString();
+  return apiRequest<StalePendingAppointmentItem[]>(`/api/admin/appointments/stale-pending?${query}`, { auth: true });
+}
+
 export async function updateAdminAppointmentStatus(id: string, status: AppointmentItem["status"]): Promise<AppointmentItem> {
   return apiRequest<AppointmentItem>(`/api/admin/appointments/${id}/status`, {
     method: "PATCH",
@@ -232,6 +249,14 @@ export async function updateAdminClient(
 export async function deleteAdminClient(id: string): Promise<void> {
   await apiRequest<null>(`/api/admin/clients/${id}`, {
     method: "DELETE",
+    auth: true,
+  });
+}
+
+export async function mergeAdminClients(sourceClientId: string, targetClientId: string): Promise<ClientSummary> {
+  return apiRequest<ClientSummary>("/api/admin/clients/merge", {
+    method: "POST",
+    body: { sourceClientId, targetClientId },
     auth: true,
   });
 }

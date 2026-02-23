@@ -45,12 +45,14 @@ public class AdminClientService {
 
         String normalizedName = request.name().trim();
         String normalizedPhone = request.phone().trim();
-        if (clientRepository.existsByPhoneAndIdNot(normalizedPhone, id)) {
+        String phoneNormalized = PhoneNormalizer.normalize(normalizedPhone);
+        if (clientRepository.existsByPhoneNormalizedAndIdNot(phoneNormalized, id)) {
             throw new BusinessRuleException("Ya existe otro cliente con ese telefono");
         }
 
         client.setName(normalizedName);
         client.setPhone(normalizedPhone);
+        client.setPhoneNormalized(phoneNormalized);
         return toSummary(clientRepository.save(client));
     }
 
@@ -61,6 +63,23 @@ public class AdminClientService {
 
         appointmentRepository.deleteAllByClientId(id);
         clientRepository.delete(client);
+    }
+
+    @Transactional
+    public ClientSummaryResponse merge(UUID sourceClientId, UUID targetClientId) {
+        if (sourceClientId.equals(targetClientId)) {
+            throw new BusinessRuleException("Selecciona dos clientes distintos para fusionar");
+        }
+
+        Client source = clientRepository.findById(sourceClientId)
+                .orElseThrow(() -> new NotFoundException("Cliente origen no encontrado"));
+        Client target = clientRepository.findById(targetClientId)
+                .orElseThrow(() -> new NotFoundException("Cliente destino no encontrado"));
+
+        appointmentRepository.reassignClient(source.getId(), target.getId());
+        clientRepository.delete(source);
+
+        return toSummary(target);
     }
 
     private ClientSummaryResponse toSummary(Client client) {

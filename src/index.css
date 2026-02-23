@@ -70,6 +70,29 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+  input[type="month"],
+  input[type="date"],
+  input[type="datetime-local"] {
+    color-scheme: dark;
+  }
+  input[type="month"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    opacity: 0.95;
+    filter: invert(84%) sepia(14%) saturate(234%) hue-rotate(353deg) brightness(95%) contrast(88%);
+    cursor: pointer;
+  }
+  input[type="month"]::-webkit-calendar-picker-indicator:hover,
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+  .month-picker-strong::-webkit-calendar-picker-indicator {
+    opacity: 1;
+    transform: scale(1.25);
+    filter: invert(83%) sepia(21%) saturate(387%) hue-rotate(359deg) brightness(104%) contrast(95%)
+      drop-shadow(0 0 2px rgba(255, 214, 140, 0.55));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

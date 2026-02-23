@@ -337,16 +337,6 @@ const BookingForm = () => {
                     Ir ahora a WhatsApp
                   </a>
                 </Button>
-                <Button
-                  className="mt-3 w-full"
-                  variant="outline"
-                  onClick={() => {
-                    setRedirectCancelled(true);
-                    setRedirectCountdown(null);
-                  }}
-                >
-                  Cancelar redireccion automatica
-                </Button>
               </>
             ) : null}
             <Button
@@ -365,7 +355,7 @@ const BookingForm = () => {
                 setRedirectCountdown(null);
               }}
             >
-              Entendido
+              Volver al inicio
             </Button>
           </motion.div>
         </div>

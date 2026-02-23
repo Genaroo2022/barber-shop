@@ -9,5 +9,9 @@ import java.util.UUID;
 public interface ClientRepository extends JpaRepository<Client, UUID> {
     Optional<Client> findByPhone(String phone);
 
+    Optional<Client> findByPhoneNormalized(String phoneNormalized);
+
     boolean existsByPhoneAndIdNot(String phone, UUID id);
+
+    boolean existsByPhoneNormalizedAndIdNot(String phoneNormalized, UUID id);
 }

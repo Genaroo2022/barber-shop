@@ -14,6 +14,8 @@ Core business capabilities:
 - Admin metrics (appointments, clients, income)
 - Manual income management in admin (off-system cuts + tips)
 - Monthly history views for `stats`, `appointments`, and `income`
+- On-demand admin assistant to detect stale pending appointments (no background scheduler)
+- Client deduplication by normalized phone + manual merge flow in admin
 - Basic anti-abuse protection for public booking and login (IP/email rate limiting)
 
 ## Tech Stack
@@ -178,9 +180,13 @@ npm run build
   - Backend pre-registration gate for Firebase login via `FIREBASE_ALLOWED_UIDS`
   - Frontend private route aliases for admin/login via `VITE_ADMIN_PATH` and `VITE_LOGIN_PATH`
   - Landing anchor navigation tuned: smoother scroll + corrected section anchor targets
+  - Booking success UX: user-initiated WhatsApp CTA + countdown redirect
+  - Backend WhatsApp webhook auto-reply with guard rails (recent appointment + cooldown)
+  - Admin appointments assistant modal (on-demand query for stale `PENDING`)
+  - Client deduplication by normalized phone (`phone_normalized`) + migration V5 + merge endpoint/UI
 - Backend migrations must run automatically at startup.
   - Current implementation uses `backend/src/main/java/com/barberia/stylebook/config/SchemaMigrationConfig.java`.
-  - Keep migration scripts in `backend/src/main/resources/db/migration` (`V1`, `V2`, `V3` currently).
+  - Keep migration scripts in `backend/src/main/resources/db/migration` (`V1`..`V5` currently).
 
 ## UI Parity Rule
 

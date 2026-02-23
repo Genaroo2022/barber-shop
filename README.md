@@ -20,7 +20,7 @@ Aplicacion para gestion de turnos de barberia:
 Copy-Item .env.docker.example .env
 ```
 
-2. Edita `.env` con valores propios (especialmente passwords y JWT secret).
+2. Edita `.env` con valores propios (especialmente passwords, JWT secret y numero de WhatsApp).
 
 3. Levanta servicios:
 
@@ -53,6 +53,7 @@ docker compose down
   - Admin clientes: editar y eliminar
   - Formulario publico de turnos con validacion por campo (errores visuales en rojo)
   - Disponibilidad reactiva de horarios en booking publico (`/api/public/appointments/occupied`)
+  - Confirmacion de reserva iniciada por el usuario via WhatsApp desde pantalla de exito
   - Polling en admin de turnos + toast cuando llegan turnos nuevos (sin recargar pagina)
   - Rate limiting para login y para reservas publicas por IP
 
@@ -97,6 +98,13 @@ $env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_MINUTE="<int>"
 $env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_HOUR="<int>"
 $env:FIREBASE_API_KEY="<firebase-web-api-key>"
 $env:FIREBASE_ALLOWED_UIDS="<uid_1,uid_2,...>"
+$env:WHATSAPP_AUTOREPLY_ENABLED="<true|false>"
+$env:WHATSAPP_WEBHOOK_VERIFY_TOKEN="<token-verificacion-meta>"
+$env:WHATSAPP_PHONE_NUMBER_ID="<meta-phone-number-id>"
+$env:WHATSAPP_ACCESS_TOKEN="<meta-cloud-api-token>"
+$env:WHATSAPP_AUTOREPLY_LOOKBACK_MINUTES="<int>"
+$env:WHATSAPP_AUTOREPLY_COOLDOWN_MINUTES="<int>"
+$env:WHATSAPP_BUSINESS_TIMEZONE="<IANA-timezone>"
 ```
 
 ### Ejecutar backend
@@ -150,6 +158,7 @@ Archivo `.env`:
 VITE_API_BASE_URL="http://localhost:8080"
 VITE_LOGIN_PATH="/acceso-admin-9x7p"
 VITE_ADMIN_PATH="/panel-admin-9x7p"
+VITE_WHATSAPP_BOOKING_PHONE="5491122334455"
 ```
 
 ### Ejecutar frontend
@@ -190,6 +199,10 @@ JWT_SECRET_BASE64=<secret-base64-256-bit-o-mas>
 CORS_ALLOWED_ORIGINS=https://<tu-frontend>.vercel.app,https://<tu-frontend>.netlify.app
 FIREBASE_API_KEY=<firebase-web-api-key>
 FIREBASE_ALLOWED_UIDS=<uid_admin_1,uid_admin_2>
+WHATSAPP_AUTOREPLY_ENABLED=true
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=<token-verificacion-meta>
+WHATSAPP_PHONE_NUMBER_ID=<meta-phone-number-id>
+WHATSAPP_ACCESS_TOKEN=<meta-cloud-api-token>
 ```
 
 Opcional:
@@ -209,6 +222,7 @@ Variables frontend:
 VITE_API_BASE_URL=https://<tu-backend-render>.onrender.com
 VITE_LOGIN_PATH=/acceso-admin-9x7p
 VITE_ADMIN_PATH=/panel-admin-9x7p
+VITE_WHATSAPP_BOOKING_PHONE=<codigo_pais_area_numero_sin_+_ni_espacios>
 VITE_CLOUDINARY_CLOUD_NAME=<tu-cloud-name>
 VITE_CLOUDINARY_UPLOAD_PRESET=<tu-upload-preset-unsigned>
 VITE_FIREBASE_API_KEY=<firebase-web-api-key>
@@ -230,6 +244,8 @@ Publicos:
 - `POST /api/public/appointments`
 - `POST /api/auth/login`
 - `POST /api/auth/login/firebase`
+- `GET /api/webhooks/whatsapp` (verificacion webhook Meta)
+- `POST /api/webhooks/whatsapp` (eventos webhook Meta)
 
 Admin (JWT Bearer):
 - `GET /api/admin/appointments`
@@ -336,6 +352,8 @@ curl -X PATCH http://localhost:8080/api/admin/appointments/<APPOINTMENT_ID>/stat
 
 - El frontend ya consume el backend Spring (no depende de Supabase para login/agenda/admin).
 - Si cambias la URL/puerto del backend, actualiza `VITE_API_BASE_URL`.
+- El CTA de confirmacion por WhatsApp usa `VITE_WHATSAPP_BOOKING_PHONE` y requiere formato solo digitos (ej: `5491122334455`).
+- Auto-reply de WhatsApp (backend) solo responde si el numero entrante coincide con un cliente con turno `PENDING/CONFIRMED` creado recientemente (ventana `WHATSAPP_AUTOREPLY_LOOKBACK_MINUTES`) y respeta cooldown por telefono (`WHATSAPP_AUTOREPLY_COOLDOWN_MINUTES`) para evitar respuestas indeseadas/repetidas.
 - En admin, los KPIs/turnos/ingresos se consultan por mes con input tipo calendario mensual (`YYYY-MM`).
 - Los botones `Descargar` de `Turnos` e `Ingresos` exportan solo el mes seleccionado.
 - En Admin > Turnos, hay refresco automatico periodico y toast de nuevos turnos.
@@ -361,3 +379,8 @@ Manual run:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\precommit-secret-scan.ps1
 ```
+
+## Handoff notes
+
+- No se usa archivo `NEXT_STEPS.md`.
+- Para continuidad de trabajo, documentar contexto en commits/PR o en el canal de trabajo.

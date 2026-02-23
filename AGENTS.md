@@ -190,4 +190,5 @@ npm run build
 
 ## Handoff Convention
 
-- Keep `NEXT_STEPS.md` updated with immediate next actions so work can continue in a new console/session.
+- Do not create or maintain a `NEXT_STEPS.md` file.
+- Leave handoff context in commit messages, PR description, or direct chat notes.

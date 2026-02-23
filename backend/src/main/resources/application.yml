@@ -21,5 +21,13 @@ app:
   firebase:
     api-key: ${FIREBASE_API_KEY:}
     allowed-uids: ${FIREBASE_ALLOWED_UIDS:}
+  whatsapp:
+    enabled: ${WHATSAPP_AUTOREPLY_ENABLED:false}
+    webhook-verify-token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+    access-token: ${WHATSAPP_ACCESS_TOKEN:}
+    lookback-minutes: ${WHATSAPP_AUTOREPLY_LOOKBACK_MINUTES:90}
+    cooldown-minutes: ${WHATSAPP_AUTOREPLY_COOLDOWN_MINUTES:720}
+    business-timezone: ${WHATSAPP_BUSINESS_TIMEZONE:America/Argentina/Buenos_Aires}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

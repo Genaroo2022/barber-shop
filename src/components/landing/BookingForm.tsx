@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { CalendarIcon, CheckCircle2 } from "lucide-react";
+import { CalendarIcon, CheckCircle2, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -48,6 +48,11 @@ type FormErrors = {
   time?: string;
 };
 
+type FetchOccupiedSlotsOptions = {
+  showLoadingIndicator?: boolean;
+  minLoadingMs?: number;
+};
+
 const phoneHasValidLength = (phone: string): boolean => {
   const digits = phone.replace(/\D/g, "");
   return digits.length >= 8 && digits.length <= 15;
@@ -55,6 +60,8 @@ const phoneHasValidLength = (phone: string): boolean => {
 
 const phoneHasValidCharacters = (phone: string): boolean =>
   /^[0-9+()\-\s]+$/.test(phone);
+
+const sanitizePhoneDigits = (value: string): string => value.replace(/\D/g, "");
 
 const getPhoneValidationMessage = (rawPhone: string): string | null => {
   const phone = rawPhone.trim();
@@ -76,6 +83,9 @@ const BookingForm = () => {
   const [occupiedSlots, setOccupiedSlots] = useState<Set<string>>(new Set());
   const [loadingOccupiedSlots, setLoadingOccupiedSlots] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [redirectCancelled, setRedirectCancelled] = useState(false);
+  const whatsappBusinessPhone = sanitizePhoneDigits(import.meta.env.VITE_WHATSAPP_BOOKING_PHONE || "");
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -96,11 +106,58 @@ const BookingForm = () => {
   );
 
   const selectedDateKey = useMemo(() => (date ? format(date, "yyyy-MM-dd") : ""), [date]);
+  const selectedDateLabel = useMemo(
+    () => (date ? format(date, "EEEE d 'de' MMMM", { locale: es }) : ""),
+    [date]
+  );
 
   const availableTimeSlots = useMemo(
     () => timeSlots.filter((slot) => !occupiedSlots.has(slot)),
     [occupiedSlots]
   );
+
+  const whatsappHref = useMemo(() => {
+    if (!whatsappBusinessPhone || !submitted || !selectedServiceName || !selectedDateLabel || !time) return "";
+
+    const messageLines = [
+      "Hola! Ya reserve mi turno desde la web y quiero confirmarlo por WhatsApp.",
+      `Nombre: ${name.trim()}`,
+      `Servicio: ${selectedServiceName}`,
+      `Fecha: ${selectedDateLabel}`,
+      `Horario: ${time}hs`,
+      `Telefono: ${phone.trim()}`,
+    ];
+
+    const encodedMessage = encodeURIComponent(messageLines.join("\n"));
+    return `https://wa.me/${whatsappBusinessPhone}?text=${encodedMessage}`;
+  }, [whatsappBusinessPhone, submitted, selectedServiceName, selectedDateLabel, time, name, phone]);
+
+  const openWhatsappConversation = useCallback(() => {
+    if (!whatsappHref || typeof window === "undefined") return;
+    window.open(whatsappHref, "_blank", "noopener,noreferrer");
+  }, [whatsappHref]);
+
+  useEffect(() => {
+    if (!submitted || !whatsappHref || redirectCancelled) {
+      setRedirectCountdown(null);
+      return;
+    }
+
+    setRedirectCountdown(5);
+    const interval = window.setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          window.clearInterval(interval);
+          openWhatsappConversation();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [submitted, whatsappHref, redirectCancelled, openWhatsappConversation]);
 
   const getBookingErrorMessage = (err: unknown): string => {
     const fallback = "Error al reservar";
@@ -118,20 +175,36 @@ const BookingForm = () => {
   };
 
   const fetchOccupiedSlots = useCallback(
-    async (selectedServiceId: string, selectedDate: string) => {
-      setLoadingOccupiedSlots(true);
+    async (
+      selectedServiceId: string,
+      selectedDate: string,
+      options: FetchOccupiedSlotsOptions = {}
+    ) => {
+      const { showLoadingIndicator = false, minLoadingMs = 700 } = options;
+      const startedAt = Date.now();
+
+      if (showLoadingIndicator) {
+        setLoadingOccupiedSlots(true);
+      }
+
       try {
         const occupied = await listPublicOccupiedAppointments(selectedServiceId, selectedDate);
         const next = new Set(occupied.map((item) => format(new Date(item.appointmentAt), "HH:mm")));
         setOccupiedSlots(next);
-        if (time && next.has(time)) {
+        if (!submitted && time && next.has(time)) {
           setTime("");
         }
       } finally {
-        setLoadingOccupiedSlots(false);
+        if (showLoadingIndicator) {
+          const elapsed = Date.now() - startedAt;
+          if (elapsed < minLoadingMs) {
+            await new Promise((resolve) => setTimeout(resolve, minLoadingMs - elapsed));
+          }
+          setLoadingOccupiedSlots(false);
+        }
       }
     },
-    [time]
+    [submitted, time]
   );
 
   const markCurrentSlotAsOccupied = (slot: string) => {
@@ -143,6 +216,10 @@ const BookingForm = () => {
   };
 
   useEffect(() => {
+    if (submitted) {
+      return;
+    }
+
     if (!serviceId || !selectedDateKey) {
       setOccupiedSlots(new Set());
       setLoadingOccupiedSlots(false);
@@ -152,7 +229,7 @@ const BookingForm = () => {
 
     const load = async () => {
       try {
-        await fetchOccupiedSlots(serviceId, selectedDateKey);
+        await fetchOccupiedSlots(serviceId, selectedDateKey, { showLoadingIndicator: true });
       } catch (err) {
         const message = err instanceof Error ? err.message : "No se pudieron actualizar los horarios";
         toast.error(message);
@@ -161,14 +238,16 @@ const BookingForm = () => {
 
     void load();
     const interval = setInterval(() => {
-      void load();
+      void fetchOccupiedSlots(serviceId, selectedDateKey).catch(() => {
+        // ignore background refresh failures to avoid noisy UI
+      });
     }, 15000);
     return () => clearInterval(interval);
-  }, [fetchOccupiedSlots, serviceId, selectedDateKey]);
+  }, [fetchOccupiedSlots, serviceId, selectedDateKey, submitted]);
 
   const refreshOccupiedSlotsIfReady = useCallback(() => {
     if (!serviceId || !selectedDateKey) return;
-    void fetchOccupiedSlots(serviceId, selectedDateKey).catch(() => {
+    void fetchOccupiedSlots(serviceId, selectedDateKey, { showLoadingIndicator: true }).catch(() => {
       // ignore manual refresh failures while opening the selector
     });
   }, [fetchOccupiedSlots, serviceId, selectedDateKey]);
@@ -201,6 +280,8 @@ const BookingForm = () => {
         appointmentAt,
       });
       markCurrentSlotAsOccupied(time);
+      setRedirectCancelled(false);
+      setRedirectCountdown(null);
       setSubmitted(true);
       toast.success("Turno reservado con exito");
     } catch (err) {
@@ -235,10 +316,42 @@ const BookingForm = () => {
               {name}, tu turno para <span className="text-primary">{selectedServiceName}</span> esta agendado.
             </p>
             <p className="text-muted-foreground">
-              {date && format(date, "EEEE d 'de' MMMM", { locale: es })} a las {time}hs
+              {selectedDateLabel} a las {time}hs
             </p>
+            {whatsappHref ? (
+              <>
+                <p className="text-muted-foreground mt-4">
+                  Tu turno quedo registrado correctamente.
+                </p>
+                <p className="text-muted-foreground">
+                  En unos segundos te vamos a redirigir a WhatsApp para enviar la confirmacion al barbero.
+                </p>
+                {redirectCountdown !== null && (
+                  <p className="text-primary font-semibold mt-2">
+                    Redireccionando en {redirectCountdown} segundos...
+                  </p>
+                )}
+                <Button asChild className="mt-6 w-full gold-gradient text-primary-foreground">
+                  <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Ir ahora a WhatsApp
+                  </a>
+                </Button>
+                <Button
+                  className="mt-3 w-full"
+                  variant="outline"
+                  onClick={() => {
+                    setRedirectCancelled(true);
+                    setRedirectCountdown(null);
+                  }}
+                >
+                  Cancelar redireccion automatica
+                </Button>
+              </>
+            ) : null}
             <Button
-              className="mt-8 gold-gradient text-primary-foreground"
+              className="mt-4"
+              variant="outline"
               onClick={() => {
                 setSubmitted(false);
                 setName("");
@@ -248,6 +361,8 @@ const BookingForm = () => {
                 setTime("");
                 setOccupiedSlots(new Set());
                 setFieldErrors({});
+                setRedirectCancelled(false);
+                setRedirectCountdown(null);
               }}
             >
               Entendido

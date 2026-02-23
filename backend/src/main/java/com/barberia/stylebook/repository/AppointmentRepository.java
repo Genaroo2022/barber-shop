@@ -3,6 +3,8 @@ package com.barberia.stylebook.repository;
 import com.barberia.stylebook.domain.entity.Appointment;
 import com.barberia.stylebook.domain.enums.AppointmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.OffsetDateTime;
 import java.util.Collection;
@@ -39,4 +41,18 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     boolean existsByServiceId(UUID serviceId);
 
     void deleteAllByClientId(UUID clientId);
+
+    @Query("""
+            select a
+            from Appointment a
+            join fetch a.client c
+            join fetch a.service s
+            where a.status in :statuses
+              and a.createdAt >= :createdFrom
+            order by a.createdAt desc
+            """)
+    List<Appointment> findRecentByStatusesAndCreatedAtAfter(
+            @Param("statuses") Collection<AppointmentStatus> statuses,
+            @Param("createdFrom") OffsetDateTime createdFrom
+    );
 }

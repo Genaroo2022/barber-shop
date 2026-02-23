@@ -13,7 +13,7 @@ import { clearAccessToken } from "@/lib/auth";
 const tabs = [
   { id: "appointments", label: "Turnos", icon: CalendarDays },
   { id: "clients", label: "Clientes", icon: Users },
-  { id: "stats", label: "Estadisticas", icon: BarChart3 },
+  { id: "stats", label: "Estadísticas", icon: BarChart3 },
   { id: "income", label: "Ingresos", icon: DollarSign },
   { id: "services", label: "Servicios", icon: Tag },
   { id: "gallery", label: "Galería", icon: Images },
@@ -74,7 +74,7 @@ const Admin = () => {
             className="w-full justify-start text-muted-foreground hover:text-destructive"
             onClick={handleLogout}
           >
-            <LogOut className="w-4 h-4 mr-2" /> Cerrar sesion
+            <LogOut className="w-4 h-4 mr-2" /> Cerrar sesión
           </Button>
         </div>
       </aside>

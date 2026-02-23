@@ -502,7 +502,7 @@ const IncomeTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar ingreso manual</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta accion eliminara el ingreso de {deleteTarget?.occurredOn}.
+              Esta acción eliminará el ingreso de {deleteTarget?.occurredOn}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

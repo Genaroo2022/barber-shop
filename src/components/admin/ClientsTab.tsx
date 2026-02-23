@@ -80,10 +80,10 @@ const ClientsTab = () => {
     if (!editingClient) return;
     const errors: ClientFormErrors = {};
     if (!form.name.trim()) errors.name = "Completa el nombre";
-    if (!form.phone.trim()) errors.phone = "Completa el telefono";
+    if (!form.phone.trim()) errors.phone = "Completa el teléfono";
     if (errors.name || errors.phone) {
       setFormErrors(errors);
-      toast.error("Completa nombre y telefono");
+      toast.error("Completa nombre y teléfono");
       return;
     }
 
@@ -170,9 +170,9 @@ const ClientsTab = () => {
         <TableHeader>
           <TableRow className="border-border hover:bg-transparent">
             <TableHead className="text-muted-foreground">Nombre</TableHead>
-            <TableHead className="text-muted-foreground">Telefono</TableHead>
+            <TableHead className="text-muted-foreground">Teléfono</TableHead>
             <TableHead className="text-muted-foreground">Turnos totales</TableHead>
-            <TableHead className="text-muted-foreground">Ultima visita</TableHead>
+            <TableHead className="text-muted-foreground">Última visita</TableHead>
             <TableHead className="text-muted-foreground">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -226,7 +226,7 @@ const ClientsTab = () => {
         <AlertDialogContent className="glass-card border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>Editar cliente</AlertDialogTitle>
-            <AlertDialogDescription>Actualiza nombre y telefono del cliente.</AlertDialogDescription>
+            <AlertDialogDescription>Actualiza nombre y teléfono del cliente.</AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
             <Input
@@ -240,7 +240,7 @@ const ClientsTab = () => {
             />
             {formErrors.name && <p className="text-xs text-destructive">{formErrors.name}</p>}
             <Input
-              placeholder="Télefono"
+              placeholder="Teléfono"
               value={form.phone}
               onChange={(e) => {
                 setForm((prev) => ({ ...prev, phone: e.target.value }));
@@ -270,7 +270,7 @@ const ClientsTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar cliente</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta accion eliminara el cliente
+              Esta acción eliminará el cliente
               {deleteTarget ? ` "${deleteTarget.clientName}"` : ""}
               {" "}y sus turnos asociados.
             </AlertDialogDescription>

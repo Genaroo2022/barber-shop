@@ -29,7 +29,7 @@ const StatsTab = () => {
           }))
         );
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Error al cargar estadisticas";
+        const message = err instanceof Error ? err.message : "Error al cargar estadísticas";
         toast.error(message);
       }
     };

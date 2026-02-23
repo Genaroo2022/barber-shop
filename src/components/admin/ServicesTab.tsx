@@ -362,7 +362,7 @@ const ServicesTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar servicio</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta accion eliminara el servicio
+              Esta acción eliminará el servicio
               {deleteTarget ? ` "${deleteTarget.name}"` : ""}.
             </AlertDialogDescription>
           </AlertDialogHeader>

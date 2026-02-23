@@ -127,7 +127,7 @@ const GalleryTab = () => {
       setImages(data);
       setSelectedImageIds((prev) => prev.filter((id) => data.some((img) => img.id === id)));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Error al cargar imagenes";
+      const message = err instanceof Error ? err.message : "Error al cargar imágenes";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -151,16 +151,16 @@ const GalleryTab = () => {
     const errors: GalleryFieldErrors = {};
     const titleRequired = options.requireTitle ?? true;
     if (titleRequired && !form.title.trim()) {
-      errors.title = "Completa el titulo";
+      errors.title = "Completa el título";
     }
 
     const sortOrder = Number(form.sortOrder);
     if (Number.isNaN(sortOrder) || sortOrder < 0) {
-      errors.sortOrder = "El numero debe ser 0 o mayor";
+      errors.sortOrder = "El número debe ser 0 o mayor";
     } else {
       const repeated = images.some((img) => img.sortOrder === sortOrder && img.id !== options.excludeId);
       if (repeated && !options.allowSortOrderConflict) {
-        errors.sortOrder = "Ese numero ya esta en uso por otra foto";
+        errors.sortOrder = "Ese número ya está en uso por otra foto";
       }
     }
 
@@ -197,7 +197,7 @@ const GalleryTab = () => {
     const normalized = titles.slice(0, fileCount).map((title) => title.trim());
     for (let index = 0; index < fileCount; index += 1) {
       if (!normalized[index]) {
-        errors[index] = "Completa el titulo";
+        errors[index] = "Completa el título";
       }
     }
     return { errors, titles: normalized };
@@ -289,7 +289,7 @@ const GalleryTab = () => {
     }
 
     if (uploadMode === "multiple" && selectedFiles.length === 0) {
-      setNewErrors((prev) => ({ ...prev, file: "Selecciona una o mas imagenes" }));
+      setNewErrors((prev) => ({ ...prev, file: "Selecciona una o más imágenes" }));
       toast.error("Selecciona al menos una imagen");
       return;
     }
@@ -298,7 +298,7 @@ const GalleryTab = () => {
       const titleValidation = validateMultiTitles(newFileTitles, selectedFiles.length);
       if (Object.keys(titleValidation.errors).length > 0) {
         setNewMultiTitleErrors(titleValidation.errors);
-        toast.error("Cada foto debe tener titulo");
+        toast.error("Cada foto debe tener título");
         return;
       }
     }
@@ -359,7 +359,7 @@ const GalleryTab = () => {
       setEditingErrors({});
       await fetchImages();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "No se pudo intercambiar el numero";
+      const message = err instanceof Error ? err.message : "No se pudo intercambiar el número";
       toast.error(message);
     } finally {
       setUploading(false);
@@ -384,13 +384,13 @@ const GalleryTab = () => {
       toast.success(
         idsToDelete.length === 1
           ? "Imagen eliminada"
-          : `${idsToDelete.length} imagenes eliminadas`
+          : `${idsToDelete.length} imágenes eliminadas`
       );
       setSelectedImageIds([]);
       setBulkDeleteMode(null);
       await fetchImages();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "No se pudieron eliminar las imagenes";
+      const message = err instanceof Error ? err.message : "No se pudieron eliminar las imágenes";
       toast.error(message);
     } finally {
       setBulkDeleting(false);
@@ -406,19 +406,19 @@ const GalleryTab = () => {
       fromOrder < 0 ||
       toOrder < 0
     ) {
-      setReorderError("Completa ambos numeros con valores validos (0 o mayor)");
+      setReorderError("Completa ambos números con valores válidos (0 o mayor)");
       return;
     }
 
     if (fromOrder === toOrder) {
-      setReorderError("Los numeros deben ser distintos");
+      setReorderError("Los números deben ser distintos");
       return;
     }
 
     const fromImage = images.find((img) => img.sortOrder === fromOrder);
     const toImage = images.find((img) => img.sortOrder === toOrder);
     if (!fromImage || !toImage) {
-      setReorderError("Uno de los numeros no existe en la galeria");
+      setReorderError("Uno de los números no existe en la galería");
       return;
     }
 
@@ -526,7 +526,7 @@ const GalleryTab = () => {
 
   const errorClass = (hasError: boolean) => (hasError ? "border-destructive focus-visible:ring-destructive" : "");
 
-  if (loading) return <div className="text-muted-foreground">Cargando galeria...</div>;
+  if (loading) return <div className="text-muted-foreground">Cargando galería...</div>;
 
   return (
     <div className="space-y-6">
@@ -584,7 +584,7 @@ const GalleryTab = () => {
             <Input
               type="number"
               min="0"
-              placeholder="Numero de foto"
+              placeholder="Número de foto"
               value={newForm.sortOrder}
               onChange={(e) => {
                 setNewForm((prev) => ({ ...prev, sortOrder: e.target.value }));
@@ -663,7 +663,7 @@ const GalleryTab = () => {
           {creating || uploading
             ? "Guardando..."
             : uploadMode === "multiple"
-              ? "Agregar imagenes"
+              ? "Agregar imágenes"
               : "Agregar imagen"}
         </Button>
       </div>
@@ -699,7 +699,7 @@ const GalleryTab = () => {
                 setReorderDialogOpen(true);
               }}
             >
-              Intercambiar numeros
+              Intercambiar números
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
@@ -707,7 +707,7 @@ const GalleryTab = () => {
           </p>
         </div>
         {sortedImages.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay imagenes cargadas.</p>
+          <p className="text-sm text-muted-foreground">No hay imágenes cargadas.</p>
         ) : (
           sortedImages.map((item) => {
             const isEditing = editingId === item.id;
@@ -748,7 +748,7 @@ const GalleryTab = () => {
                     type="number"
                     min="0"
                     value={isEditing ? form?.sortOrder || "0" : String(item.sortOrder)}
-                    placeholder="Numero de foto"
+                    placeholder="Número de foto"
                     onChange={(e) => {
                       setEditingForm((prev) => ({ ...prev, sortOrder: e.target.value }));
                       setEditingErrors((prev) => ({ ...prev, sortOrder: undefined }));
@@ -824,8 +824,8 @@ const GalleryTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar imagen</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta accion eliminara la foto
-              {deleteTarget ? ` "${deleteTarget.title}"` : ""} de la galeria.
+              Esta acción eliminará la foto
+              {deleteTarget ? ` "${deleteTarget.title}"` : ""} de la galería.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -844,12 +844,12 @@ const GalleryTab = () => {
       <AlertDialog open={Boolean(pendingSortSwap)} onOpenChange={(open) => !open && setPendingSortSwap(null)}>
         <AlertDialogContent className="glass-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle>Intercambiar numeros de fotos</AlertDialogTitle>
+            <AlertDialogTitle>Intercambiar números de fotos</AlertDialogTitle>
             <AlertDialogDescription>
-              Se detecto que ese numero ya existe.
+              Se detectó que ese número ya existe.
               {pendingCurrentImage && pendingTargetImage && pendingSortSwap
-                ? ` Si continuas, "${pendingCurrentImage.title}" pasara del numero ${pendingCurrentImage.sortOrder} al ${pendingSortSwap.payload.sortOrder}, y "${pendingTargetImage.title}" pasara al numero ${pendingCurrentImage.sortOrder}.`
-                : " Si continuas, se intercambiaran los numeros entre ambas fotos."}
+                ? ` Si continúas, "${pendingCurrentImage.title}" pasará del número ${pendingCurrentImage.sortOrder} al ${pendingSortSwap.payload.sortOrder}, y "${pendingTargetImage.title}" pasará al número ${pendingCurrentImage.sortOrder}.`
+                : " Si continúas, se intercambiarán los números entre ambas fotos."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -865,12 +865,12 @@ const GalleryTab = () => {
         <AlertDialogContent className="glass-card border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkDeleteMode === "all" ? "Eliminar toda la galeria" : "Eliminar imagenes seleccionadas"}
+              {bulkDeleteMode === "all" ? "Eliminar toda la galería" : "Eliminar imágenes seleccionadas"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {bulkDeleteMode === "all"
-                ? "Se eliminaran todas las fotos de la galeria."
-                : `Se eliminaran ${selectedImageIds.length} fotos seleccionadas.`}
+                ? "Se eliminarán todas las fotos de la galería."
+                : `Se eliminarán ${selectedImageIds.length} fotos seleccionadas.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -891,14 +891,14 @@ const GalleryTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Intercambiar orden de fotos</AlertDialogTitle>
             <AlertDialogDescription>
-              Cambia dos numeros de orden en un solo paso. Ejemplo: 4 y 9.
+              Cambia dos números de orden en un solo paso. Ejemplo: 4 y 9.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
             <Input
               type="number"
               min="0"
-              placeholder="Numero actual (ej: 4)"
+              placeholder="Número actual (ej: 4)"
               value={reorderFrom}
               onChange={(e) => {
                 setReorderFrom(e.target.value);
@@ -908,7 +908,7 @@ const GalleryTab = () => {
             <Input
               type="number"
               min="0"
-              placeholder="Nuevo numero (ej: 9)"
+              placeholder="Nuevo número (ej: 9)"
               value={reorderTo}
               onChange={(e) => {
                 setReorderTo(e.target.value);

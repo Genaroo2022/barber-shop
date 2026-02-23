@@ -20,6 +20,7 @@ import {
   updateAdminService,
   type ServiceItem,
 } from "@/lib/api";
+import { emitContentRefresh } from "@/lib/content-refresh";
 
 type ServiceForm = {
   name: string;
@@ -119,6 +120,7 @@ const ServicesTab = () => {
       toast.success("Servicio creado");
       setNewService(emptyForm);
       setNewServiceErrors({});
+      emitContentRefresh("services");
       fetchServices();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo crear el servicio";
@@ -154,6 +156,7 @@ const ServicesTab = () => {
       toast.success("Servicio actualizado");
       setEditingId(null);
       setEditingErrors({});
+      emitContentRefresh("services");
       fetchServices();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo actualizar el servicio";
@@ -168,6 +171,7 @@ const ServicesTab = () => {
       await deleteAdminService(deleteTarget.id);
       toast.success("Servicio eliminado");
       setDeleteTarget(null);
+      emitContentRefresh("services");
       fetchServices();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo eliminar el servicio";
@@ -242,7 +246,7 @@ const ServicesTab = () => {
               onCheckedChange={(checked) => setNewService((prev) => ({ ...prev, active: checked === true }))}
             />
             <label htmlFor="new-service-active" className="text-sm text-muted-foreground">
-              Activo
+              Mostrar en la web
             </label>
           </div>
         </div>
@@ -321,7 +325,7 @@ const ServicesTab = () => {
                       onCheckedChange={(checked) => setEditingForm((prev) => ({ ...prev, active: checked === true }))}
                     />
                     <label htmlFor={`service-active-${service.id}`} className="text-sm text-muted-foreground">
-                      Activo
+                      Mostrar en la web
                     </label>
                   </div>
                 </div>

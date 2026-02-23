@@ -2,12 +2,18 @@ package com.barberia.stylebook.web;
 
 import com.barberia.stylebook.application.service.BookingService;
 import com.barberia.stylebook.application.service.GalleryImageService;
+import com.barberia.stylebook.application.service.HaircutSuggestionService;
+import com.barberia.stylebook.application.exception.TooManyRequestsException;
 import com.barberia.stylebook.application.service.ServiceCatalogService;
 import com.barberia.stylebook.security.BookingRateLimiter;
 import com.barberia.stylebook.security.ClientIpResolver;
+import com.barberia.stylebook.security.HaircutAiConcurrencyLimiter;
+import com.barberia.stylebook.security.HaircutAiRateLimiter;
 import com.barberia.stylebook.web.dto.AppointmentResponse;
 import com.barberia.stylebook.web.dto.CreateAppointmentRequest;
 import com.barberia.stylebook.web.dto.GalleryImageResponse;
+import com.barberia.stylebook.web.dto.HaircutSuggestionRequest;
+import com.barberia.stylebook.web.dto.HaircutSuggestionResponse;
 import com.barberia.stylebook.web.dto.PublicOccupiedAppointmentResponse;
 import com.barberia.stylebook.web.dto.ServiceCatalogResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,20 +38,29 @@ public class PublicBookingController {
     private final BookingService bookingService;
     private final ServiceCatalogService serviceCatalogService;
     private final GalleryImageService galleryImageService;
+    private final HaircutSuggestionService haircutSuggestionService;
     private final BookingRateLimiter bookingRateLimiter;
+    private final HaircutAiConcurrencyLimiter haircutAiConcurrencyLimiter;
+    private final HaircutAiRateLimiter haircutAiRateLimiter;
     private final ClientIpResolver clientIpResolver;
 
     public PublicBookingController(
             BookingService bookingService,
             ServiceCatalogService serviceCatalogService,
             GalleryImageService galleryImageService,
+            HaircutSuggestionService haircutSuggestionService,
             BookingRateLimiter bookingRateLimiter,
+            HaircutAiConcurrencyLimiter haircutAiConcurrencyLimiter,
+            HaircutAiRateLimiter haircutAiRateLimiter,
             ClientIpResolver clientIpResolver
     ) {
         this.bookingService = bookingService;
         this.serviceCatalogService = serviceCatalogService;
         this.galleryImageService = galleryImageService;
+        this.haircutSuggestionService = haircutSuggestionService;
         this.bookingRateLimiter = bookingRateLimiter;
+        this.haircutAiConcurrencyLimiter = haircutAiConcurrencyLimiter;
+        this.haircutAiRateLimiter = haircutAiRateLimiter;
         this.clientIpResolver = clientIpResolver;
     }
 
@@ -76,5 +91,23 @@ public class PublicBookingController {
     @GetMapping("/gallery")
     public ResponseEntity<List<GalleryImageResponse>> listGallery() {
         return ResponseEntity.ok(galleryImageService.listPublic());
+    }
+
+    @PostMapping("/ai/haircut-suggestions")
+    public ResponseEntity<HaircutSuggestionResponse> suggestHaircut(
+            @Valid @RequestBody HaircutSuggestionRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String clientIp = clientIpResolver.resolve(httpRequest);
+        haircutAiRateLimiter.checkAllowed(clientIp);
+        haircutAiRateLimiter.recordAttempt(clientIp);
+        if (!haircutAiConcurrencyLimiter.tryAcquire()) {
+            throw new TooManyRequestsException("Alta demanda de simulacion IA en este momento. Intenta nuevamente en unos segundos.");
+        }
+        try {
+            return ResponseEntity.ok(haircutSuggestionService.suggestFromImage(request.imageDataUrl()));
+        } finally {
+            haircutAiConcurrencyLimiter.release();
+        }
     }
 }

@@ -1,7 +1,12 @@
 import { clearAccessToken, getAccessToken } from "@/lib/auth";
 import { LOGIN_ROUTE } from "@/lib/routes";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const DEFAULT_API_BASE_URL =
+  typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:8080`
+    : "http://localhost:8080";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL;
 
 type RequestOptions = {
   method?: string;
@@ -97,6 +102,20 @@ export type StalePendingAppointmentItem = {
 
 export type PublicOccupiedAppointment = {
   appointmentAt: string;
+};
+
+export type HaircutSuggestionItem = {
+  styleName: string;
+  reason: string;
+  maintenance: string;
+};
+
+export type HaircutSuggestionResult = {
+  detectedDescription: string;
+  suggestions: HaircutSuggestionItem[];
+  previewImageDataUrl?: string | null;
+  previewStyleName?: string | null;
+  previewMessage?: string | null;
 };
 
 export type ClientSummary = {
@@ -202,6 +221,13 @@ export async function listPublicOccupiedAppointments(
 ): Promise<PublicOccupiedAppointment[]> {
   const query = new URLSearchParams({ serviceId, date }).toString();
   return apiRequest<PublicOccupiedAppointment[]>(`/api/public/appointments/occupied?${query}`);
+}
+
+export async function getPublicHaircutSuggestions(imageDataUrl: string): Promise<HaircutSuggestionResult> {
+  return apiRequest<HaircutSuggestionResult>("/api/public/ai/haircut-suggestions", {
+    method: "POST",
+    body: { imageDataUrl },
+  });
 }
 
 export async function updateAdminAppointment(

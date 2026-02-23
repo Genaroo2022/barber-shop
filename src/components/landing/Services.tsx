@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Scissors, SparkleIcon } from "lucide-react";
 import { listPublicServices, type ServiceItem } from "@/lib/api";
+import { subscribeToContentRefresh } from "@/lib/content-refresh";
 
 type VisualService = {
   id: string;
@@ -46,17 +47,20 @@ const fallbackCatalog: VisualService[] = [
 const Services = () => {
   const [services, setServices] = useState<ServiceItem[]>([]);
 
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const data = await listPublicServices();
-        setServices(data);
-      } catch {
-        setServices([]);
-      }
-    };
-    fetchServices();
+  const fetchServices = useCallback(async () => {
+    try {
+      const data = await listPublicServices();
+      setServices(data);
+    } catch {
+      setServices([]);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchServices();
+    const unsubscribe = subscribeToContentRefresh("services", fetchServices);
+    return unsubscribe;
+  }, [fetchServices]);
 
   const visualServices: VisualService[] =
     services.length > 0

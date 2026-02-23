@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ImageIcon } from "lucide-react";
 import { listPublicGalleryImages, type GalleryImageItem } from "@/lib/api";
+import { subscribeToContentRefresh } from "@/lib/content-refresh";
 
 type VisualGalleryItem = {
   id: string;
@@ -22,17 +23,20 @@ const fallbackGallery: VisualGalleryItem[] = [
 const Gallery = () => {
   const [images, setImages] = useState<GalleryImageItem[]>([]);
 
-  useEffect(() => {
-    const fetchGallery = async () => {
-      try {
-        const data = await listPublicGalleryImages();
-        setImages(data);
-      } catch {
-        setImages([]);
-      }
-    };
-    fetchGallery();
+  const fetchGallery = useCallback(async () => {
+    try {
+      const data = await listPublicGalleryImages();
+      setImages(data);
+    } catch {
+      setImages([]);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchGallery();
+    const unsubscribe = subscribeToContentRefresh("gallery", fetchGallery);
+    return unsubscribe;
+  }, [fetchGallery]);
 
   const items: VisualGalleryItem[] =
     images.length > 0

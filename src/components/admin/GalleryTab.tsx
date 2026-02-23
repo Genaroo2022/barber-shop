@@ -20,6 +20,7 @@ import {
   updateAdminGalleryImage,
   type GalleryImageItem,
 } from "@/lib/api";
+import { emitContentRefresh } from "@/lib/content-refresh";
 
 type GalleryForm = {
   title: string;
@@ -327,6 +328,7 @@ const GalleryTab = () => {
 
       toast.success(selectedFiles.length > 1 ? "Imagenes agregadas" : "Imagen agregada");
       resetCreateForm();
+      emitContentRefresh("gallery");
       await fetchImages();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo agregar la imagen";
@@ -357,6 +359,7 @@ const GalleryTab = () => {
       setEditingId(null);
       setEditingFile(null);
       setEditingErrors({});
+      emitContentRefresh("gallery");
       await fetchImages();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo intercambiar el número";
@@ -388,6 +391,7 @@ const GalleryTab = () => {
       );
       setSelectedImageIds([]);
       setBulkDeleteMode(null);
+      emitContentRefresh("gallery");
       await fetchImages();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudieron eliminar las imágenes";
@@ -440,6 +444,7 @@ const GalleryTab = () => {
       setReorderDialogOpen(false);
       setReorderFrom("");
       setReorderTo("");
+      emitContentRefresh("gallery");
       await fetchImages();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo intercambiar el orden";
@@ -499,6 +504,7 @@ const GalleryTab = () => {
       setEditingId(null);
       setEditingFile(null);
       setEditingErrors({});
+      emitContentRefresh("gallery");
       await fetchImages();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo actualizar";
@@ -515,6 +521,7 @@ const GalleryTab = () => {
       await deleteAdminGalleryImage(deleteTarget.id);
       toast.success("Imagen eliminada");
       setDeleteTarget(null);
+      emitContentRefresh("gallery");
       fetchImages();
     } catch (err) {
       const message = err instanceof Error ? err.message : "No se pudo eliminar";

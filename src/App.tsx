@@ -33,6 +33,12 @@ const RequireAuth = ({ children }: { children: ReactElement }) => {
   return children;
 };
 
+const RouteLoadingFallback = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="h-7 w-7 rounded-full border-2 border-gold/30 border-t-gold animate-spin" aria-label="Cargando" />
+  </div>
+);
+
 const App = () => {
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -101,7 +107,7 @@ const App = () => {
             <Route
               path={LOGIN_ROUTE}
               element={
-                <Suspense fallback={<div className="text-muted-foreground p-6">Cargando...</div>}>
+                <Suspense fallback={<RouteLoadingFallback />}>
                   <Login />
                 </Suspense>
               }
@@ -110,7 +116,7 @@ const App = () => {
               path={ADMIN_ROUTE}
               element={
                 <RequireAuth>
-                  <Suspense fallback={<div className="text-muted-foreground p-6">Cargando...</div>}>
+                  <Suspense fallback={<RouteLoadingFallback />}>
                     <Admin />
                   </Suspense>
                 </RequireAuth>

@@ -17,8 +17,21 @@
     <meta name="twitter:image" content="/placeholder.svg" />
   </head>
 
-  <body>
-    <div id="root"></div>
+  <body style="margin: 0; background: hsl(220 20% 6%); color: hsl(40 20% 92%);">
+    <div id="root">
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <div
+          aria-label="Cargando"
+          style="width: 28px; height: 28px; border-radius: 9999px; border: 2px solid hsl(40 65% 50% / 0.3); border-top-color: hsl(40 65% 50%); animation: spin 0.8s linear infinite;"
+        ></div>
+      </div>
+    </div>
+    <style>
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    </style>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

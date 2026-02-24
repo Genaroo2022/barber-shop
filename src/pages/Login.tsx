@@ -4,7 +4,9 @@ import { Scissors, Smartphone, Chrome } from "lucide-react";
 import {
   ConfirmationResult,
   RecaptchaVerifier,
+  User,
   getRedirectResult,
+  onAuthStateChanged,
   signInWithPhoneNumber,
   signInWithRedirect,
   signOut,
@@ -23,16 +25,23 @@ const normalizePhoneForFirebase = (value: string): string => value.replace(/[^\d
 const PHONE_PREFIX = "+54 9 11";
 const formatLocalPhone = (digits: string): string =>
   digits.length <= 4 ? digits : `${digits.slice(0, 4)} ${digits.slice(4, 8)}`;
+const extractRejectedUid = (error: unknown): string | null => {
+  if (!(error instanceof Error)) return null;
+  const match = error.message.match(/UID:\s*([A-Za-z0-9_-]+)/i);
+  return match?.[1] ?? null;
+};
 
 const Login = () => {
   const [localPhoneDigits, setLocalPhoneDigits] = useState("");
   const [otpCode, setOtpCode] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingPhone, setLoadingPhone] = useState(false);
   const [verifyingCode, setVerifyingCode] = useState(false);
   const navigate = useNavigate();
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
+  const backendLoginStartedRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -43,31 +52,9 @@ const Login = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const consumeGoogleRedirect = async () => {
-      try {
-        const auth = getFirebaseAuth();
-        const result = await getRedirectResult(auth);
-        if (!result?.user) {
-          return;
-        }
-        setLoadingGoogle(true);
-        await completeBackendLogin();
-        toast.success("Inicio de sesion exitoso");
-      } catch (error) {
-        await safeFirebaseSignOut();
-        toast.error(mapFirebaseError(error));
-      } finally {
-        setLoadingGoogle(false);
-      }
-    };
-
-    void consumeGoogleRedirect();
-  }, []);
-
   const mapFirebaseError = (error: unknown): string => {
     if (error instanceof Error) {
-      if (error.message === "Usuario no encontrado") return error.message;
+      if (error.message.startsWith("Usuario no encontrado")) return "Usuario no encontrado";
       const code = (error as { code?: string }).code;
       if (code === "auth/popup-closed-by-user") return "Se cancelo el inicio con Google";
       if (code === "auth/invalid-phone-number") return "Numero invalido. Usa formato internacional, por ejemplo +54911...";
@@ -88,9 +75,14 @@ const Login = () => {
     }
   };
 
-  const completeBackendLogin = async () => {
-    const auth = getFirebaseAuth();
-    const firebaseUser = auth.currentUser;
+  const showAuthError = (message: string) => {
+    setAuthError(message);
+    toast.error(message);
+    console.error("[auth/login]", message);
+  };
+
+  const completeBackendLogin = async (firebaseUserOverride?: User | null) => {
+    const firebaseUser = firebaseUserOverride ?? getFirebaseAuth().currentUser;
     if (!firebaseUser) {
       throw new Error("No se pudo obtener la sesion de Firebase");
     }
@@ -98,8 +90,58 @@ const Login = () => {
     const idToken = await firebaseUser.getIdToken(true);
     const response = await loginWithFirebase(idToken);
     setAccessToken(response.accessToken);
+    setAuthError(null);
     navigate(ADMIN_ROUTE);
   };
+
+  const completeBackendLoginOnce = async (firebaseUser?: User | null) => {
+    if (backendLoginStartedRef.current) {
+      return;
+    }
+    backendLoginStartedRef.current = true;
+    try {
+      setLoadingGoogle(true);
+      await completeBackendLogin(firebaseUser);
+      toast.success("Inicio de sesion exitoso");
+    } catch (error) {
+      const rejectedUid = extractRejectedUid(error) ?? getFirebaseAuth().currentUser?.uid;
+      backendLoginStartedRef.current = false;
+      await safeFirebaseSignOut();
+      if (error instanceof Error && error.message.startsWith("Usuario no encontrado")) {
+        showAuthError(rejectedUid ? `Usuario no encontrado. UID: ${rejectedUid}` : "Usuario no encontrado");
+      } else {
+        showAuthError(mapFirebaseError(error));
+      }
+    } finally {
+      setLoadingGoogle(false);
+    }
+  };
+
+  useEffect(() => {
+    const auth = getFirebaseAuth();
+
+    const consumeGoogleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          await completeBackendLoginOnce(result.user);
+        }
+      } catch (error) {
+        await safeFirebaseSignOut();
+        toast.error(mapFirebaseError(error));
+      }
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        void completeBackendLoginOnce(user);
+      }
+    });
+
+    void consumeGoogleRedirect();
+
+    return () => unsubscribe();
+  }, []);
 
   const ensureRecaptchaVerifier = (): RecaptchaVerifier => {
     const auth = getFirebaseAuth();
@@ -113,12 +155,13 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     try {
+      setAuthError(null);
       setLoadingGoogle(true);
       const auth = getFirebaseAuth();
       await signInWithRedirect(auth, getGoogleProvider());
     } catch (error) {
       await safeFirebaseSignOut();
-      toast.error(mapFirebaseError(error));
+      showAuthError(mapFirebaseError(error));
       setLoadingGoogle(false);
     }
   };
@@ -132,6 +175,7 @@ const Login = () => {
     }
 
     try {
+      setAuthError(null);
       setLoadingPhone(true);
       const verifier = ensureRecaptchaVerifier();
       const result = await signInWithPhoneNumber(getFirebaseAuth(), normalizedPhone, verifier);
@@ -142,7 +186,7 @@ const Login = () => {
         recaptchaRef.current.clear();
         recaptchaRef.current = null;
       }
-      toast.error(mapFirebaseError(error));
+      showAuthError(mapFirebaseError(error));
     } finally {
       setLoadingPhone(false);
     }
@@ -158,13 +202,14 @@ const Login = () => {
     }
 
     try {
+      setAuthError(null);
       setVerifyingCode(true);
       await confirmationResult.confirm(normalizedCode);
       await completeBackendLogin();
       toast.success("Inicio de sesion exitoso");
     } catch (error) {
       await safeFirebaseSignOut();
-      toast.error(mapFirebaseError(error));
+      showAuthError(mapFirebaseError(error));
     } finally {
       setVerifyingCode(false);
     }
@@ -180,6 +225,14 @@ const Login = () => {
         </div>
 
         <div className="space-y-4">
+          {authError ? (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {authError}
+            </div>
+          ) : null}
           <Button
             type="button"
             onClick={handleGoogleLogin}

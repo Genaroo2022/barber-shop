@@ -171,6 +171,10 @@ VITE_API_BASE_URL="http://localhost:8080"
 VITE_LOGIN_PATH="/acceso-admin-9x7p"
 VITE_ADMIN_PATH="/panel-admin-9x7p"
 VITE_WHATSAPP_BOOKING_PHONE="5491122334455"
+VITE_FIREBASE_API_KEY="<firebase-web-api-key>"
+VITE_FIREBASE_AUTH_DOMAIN="<tu-proyecto>.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID="<tu-project-id>"
+VITE_FIREBASE_APP_ID="<firebase-app-id>"
 VITE_DEV_ALLOWED_HOSTS="localhost,127.0.0.1"
 ```
 

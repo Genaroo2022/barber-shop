@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Scissors, Smartphone, Chrome } from "lucide-react";
-import { ConfirmationResult, RecaptchaVerifier, signInWithPhoneNumber, signInWithPopup, signOut } from "firebase/auth";
+import {
+  ConfirmationResult,
+  RecaptchaVerifier,
+  getRedirectResult,
+  signInWithPhoneNumber,
+  signInWithRedirect,
+  signOut,
+} from "firebase/auth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +41,28 @@ const Login = () => {
         recaptchaRef.current = null;
       }
     };
+  }, []);
+
+  useEffect(() => {
+    const consumeGoogleRedirect = async () => {
+      try {
+        const auth = getFirebaseAuth();
+        const result = await getRedirectResult(auth);
+        if (!result?.user) {
+          return;
+        }
+        setLoadingGoogle(true);
+        await completeBackendLogin();
+        toast.success("Inicio de sesion exitoso");
+      } catch (error) {
+        await safeFirebaseSignOut();
+        toast.error(mapFirebaseError(error));
+      } finally {
+        setLoadingGoogle(false);
+      }
+    };
+
+    void consumeGoogleRedirect();
   }, []);
 
   const mapFirebaseError = (error: unknown): string => {
@@ -86,13 +115,10 @@ const Login = () => {
     try {
       setLoadingGoogle(true);
       const auth = getFirebaseAuth();
-      await signInWithPopup(auth, getGoogleProvider());
-      await completeBackendLogin();
-      toast.success("Inicio de sesion exitoso");
+      await signInWithRedirect(auth, getGoogleProvider());
     } catch (error) {
       await safeFirebaseSignOut();
       toast.error(mapFirebaseError(error));
-    } finally {
       setLoadingGoogle(false);
     }
   };
@@ -161,8 +187,8 @@ const Login = () => {
             className="w-full gold-gradient text-primary-foreground font-semibold py-5"
           >
             <Chrome className="w-4 h-4 mr-2" />
-            {loadingGoogle ? "Conectando..." : "Ingresar con Google"}
-          </Button>
+                {loadingGoogle ? "Redirigiendo..." : "Ingresar con Google"}
+              </Button>
 
           <div className="relative py-2">
             <div className="border-t border-border/70" />

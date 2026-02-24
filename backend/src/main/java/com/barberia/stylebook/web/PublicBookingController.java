@@ -5,9 +5,9 @@ import com.barberia.stylebook.application.service.GalleryImageService;
 import com.barberia.stylebook.application.service.ServiceCatalogService;
 import com.barberia.stylebook.security.BookingRateLimiter;
 import com.barberia.stylebook.security.ClientIpResolver;
-import com.barberia.stylebook.web.dto.AppointmentResponse;
 import com.barberia.stylebook.web.dto.CreateAppointmentRequest;
 import com.barberia.stylebook.web.dto.GalleryImageResponse;
+import com.barberia.stylebook.web.dto.PublicAppointmentResponse;
 import com.barberia.stylebook.web.dto.PublicOccupiedAppointmentResponse;
 import com.barberia.stylebook.web.dto.ServiceCatalogResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,7 +50,7 @@ public class PublicBookingController {
     }
 
     @PostMapping("/appointments")
-    public ResponseEntity<AppointmentResponse> createAppointment(
+    public ResponseEntity<PublicAppointmentResponse> createAppointment(
             @Valid @RequestBody CreateAppointmentRequest request,
             HttpServletRequest httpRequest
     ) {

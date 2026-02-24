@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -31,29 +32,35 @@ public class ClientIpResolver {
             return remoteAddr;
         }
 
-        String forwarded = extractFromForwardedHeaders(request);
-        if (forwarded == null) {
+        List<String> hops = extractForwardedChain(request);
+        if (hops.isEmpty()) {
             return remoteAddr;
         }
-        return forwarded;
+        hops.add(remoteAddr);
+
+        // Walk right-to-left and skip trusted proxy hops. First untrusted hop is treated as client IP.
+        for (int i = hops.size() - 1; i >= 0; i--) {
+            String hop = hops.get(i);
+            if (!isTrustedProxy(hop)) {
+                return hop;
+            }
+        }
+
+        return remoteAddr;
     }
 
-    private String extractFromForwardedHeaders(HttpServletRequest request) {
+    private List<String> extractForwardedChain(HttpServletRequest request) {
+        List<String> hops = new ArrayList<>();
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
             for (String part : xForwardedFor.split(",")) {
                 String candidate = sanitizeIp(part);
                 if (candidate != null) {
-                    return candidate;
+                    hops.add(candidate);
                 }
             }
         }
-
-        String xRealIp = sanitizeIp(request.getHeader("X-Real-IP"));
-        if (xRealIp != null) {
-            return xRealIp;
-        }
-        return null;
+        return hops;
     }
 
     private boolean isTrustedProxy(String ip) {

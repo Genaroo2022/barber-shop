@@ -9,8 +9,8 @@ import com.barberia.stylebook.domain.enums.AppointmentStatus;
 import com.barberia.stylebook.repository.AppointmentRepository;
 import com.barberia.stylebook.repository.ClientRepository;
 import com.barberia.stylebook.repository.ServiceCatalogRepository;
-import com.barberia.stylebook.web.dto.AppointmentResponse;
 import com.barberia.stylebook.web.dto.CreateAppointmentRequest;
+import com.barberia.stylebook.web.dto.PublicAppointmentResponse;
 import com.barberia.stylebook.web.dto.PublicOccupiedAppointmentResponse;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -42,7 +42,7 @@ public class BookingService {
     }
 
     @Transactional
-    public AppointmentResponse create(CreateAppointmentRequest request) {
+    public PublicAppointmentResponse create(CreateAppointmentRequest request) {
         String normalizedClientName = request.clientName().trim();
         String normalizedClientPhone = request.clientPhone().trim();
         String phoneNormalized = PhoneNormalizer.normalize(normalizedClientPhone);
@@ -86,7 +86,7 @@ public class BookingService {
 
         try {
             Appointment saved = appointmentRepository.saveAndFlush(appointment);
-            return AppointmentMapper.toResponse(saved);
+            return AppointmentMapper.toPublicResponse(saved);
         } catch (DataIntegrityViolationException ex) {
             throw new BusinessRuleException("Ya existe un turno para ese servicio en esa fecha/hora");
         }

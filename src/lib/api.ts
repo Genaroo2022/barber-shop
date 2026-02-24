@@ -77,6 +77,14 @@ export type GalleryImageItem = {
   active: boolean;
 };
 
+export type AdminGalleryUploadSignature = {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  signature: string;
+  folder?: string | null;
+};
+
 export type AppointmentItem = {
   id: string;
   clientId: string;
@@ -102,6 +110,14 @@ export type StalePendingAppointmentItem = {
 
 export type PublicOccupiedAppointment = {
   appointmentAt: string;
+};
+
+export type PublicAppointmentItem = {
+  id: string;
+  serviceId: string;
+  serviceName: string;
+  appointmentAt: string;
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 };
 
 export type ClientSummary = {
@@ -175,8 +191,8 @@ export async function createPublicAppointment(payload: {
   serviceId: string;
   appointmentAt: string;
   notes?: string;
-}): Promise<AppointmentItem> {
-  return apiRequest<AppointmentItem>("/api/public/appointments", {
+}): Promise<PublicAppointmentItem> {
+  return apiRequest<PublicAppointmentItem>("/api/public/appointments", {
     method: "POST",
     body: payload,
   });
@@ -358,6 +374,10 @@ export async function listPublicGalleryImages(): Promise<GalleryImageItem[]> {
 
 export async function listAdminGalleryImages(): Promise<GalleryImageItem[]> {
   return apiRequest<GalleryImageItem[]>("/api/admin/gallery", { auth: true });
+}
+
+export async function getAdminGalleryUploadSignature(): Promise<AdminGalleryUploadSignature> {
+  return apiRequest<AdminGalleryUploadSignature>("/api/admin/gallery/upload-signature", { auth: true });
 }
 
 export async function createAdminGalleryImage(payload: {

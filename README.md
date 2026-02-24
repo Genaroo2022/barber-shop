@@ -103,8 +103,13 @@ $env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_MINUTE="<int>"
 $env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_HOUR="<int>"
 $env:FIREBASE_API_KEY="<firebase-web-api-key>"
 $env:FIREBASE_ALLOWED_UIDS="<uid_1,uid_2,...>"
+$env:CLOUDINARY_CLOUD_NAME="<cloud-name>"
+$env:CLOUDINARY_API_KEY="<cloudinary-api-key>"
+$env:CLOUDINARY_API_SECRET="<cloudinary-api-secret>"
+$env:CLOUDINARY_UPLOAD_FOLDER="<optional-folder>"
 $env:WHATSAPP_AUTOREPLY_ENABLED="<true|false>"
 $env:WHATSAPP_WEBHOOK_VERIFY_TOKEN="<token-verificacion-meta>"
+$env:WHATSAPP_WEBHOOK_APP_SECRET="<meta-app-secret>"
 $env:WHATSAPP_PHONE_NUMBER_ID="<meta-phone-number-id>"
 $env:WHATSAPP_ACCESS_TOKEN="<meta-cloud-api-token>"
 $env:WHATSAPP_AUTOREPLY_LOOKBACK_MINUTES="<int>"
@@ -164,6 +169,7 @@ VITE_API_BASE_URL="http://localhost:8080"
 VITE_LOGIN_PATH="/acceso-admin-9x7p"
 VITE_ADMIN_PATH="/panel-admin-9x7p"
 VITE_WHATSAPP_BOOKING_PHONE="5491122334455"
+VITE_DEV_ALLOWED_HOSTS="localhost,127.0.0.1"
 ```
 
 ### Ejecutar frontend
@@ -204,8 +210,13 @@ JWT_SECRET_BASE64=<secret-base64-256-bit-o-mas>
 CORS_ALLOWED_ORIGINS=https://<tu-frontend>.vercel.app,https://<tu-frontend>.netlify.app
 FIREBASE_API_KEY=<firebase-web-api-key>
 FIREBASE_ALLOWED_UIDS=<uid_admin_1,uid_admin_2>
+CLOUDINARY_CLOUD_NAME=<tu-cloud-name>
+CLOUDINARY_API_KEY=<tu-cloudinary-api-key>
+CLOUDINARY_API_SECRET=<tu-cloudinary-api-secret>
+CLOUDINARY_UPLOAD_FOLDER=stylebook/gallery
 WHATSAPP_AUTOREPLY_ENABLED=true
 WHATSAPP_WEBHOOK_VERIFY_TOKEN=<token-verificacion-meta>
+WHATSAPP_WEBHOOK_APP_SECRET=<meta-app-secret>
 WHATSAPP_PHONE_NUMBER_ID=<meta-phone-number-id>
 WHATSAPP_ACCESS_TOKEN=<meta-cloud-api-token>
 ```
@@ -231,8 +242,7 @@ VITE_API_BASE_URL=https://<tu-backend-render>.onrender.com
 VITE_LOGIN_PATH=/acceso-admin-9x7p
 VITE_ADMIN_PATH=/panel-admin-9x7p
 VITE_WHATSAPP_BOOKING_PHONE=<codigo_pais_area_numero_sin_+_ni_espacios>
-VITE_CLOUDINARY_CLOUD_NAME=<tu-cloud-name>
-VITE_CLOUDINARY_UPLOAD_PRESET=<tu-upload-preset-unsigned>
+VITE_DEV_ALLOWED_HOSTS=<host-dev-opcional-separado-por-comas>
 VITE_FIREBASE_API_KEY=<firebase-web-api-key>
 VITE_FIREBASE_AUTH_DOMAIN=<tu-proyecto>.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=<tu-project-id>

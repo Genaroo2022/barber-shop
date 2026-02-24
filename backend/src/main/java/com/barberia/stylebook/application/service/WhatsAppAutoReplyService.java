@@ -11,6 +11,10 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -31,6 +35,7 @@ public class WhatsAppAutoReplyService {
     private final RestClient restClient;
     private final boolean enabled;
     private final String webhookVerifyToken;
+    private final String webhookAppSecret;
     private final String phoneNumberId;
     private final String accessToken;
     private final int lookbackMinutes;
@@ -42,6 +47,7 @@ public class WhatsAppAutoReplyService {
             AppointmentRepository appointmentRepository,
             @Value("${app.whatsapp.enabled:false}") boolean enabled,
             @Value("${app.whatsapp.webhook-verify-token:}") String webhookVerifyToken,
+            @Value("${app.whatsapp.webhook-app-secret:}") String webhookAppSecret,
             @Value("${app.whatsapp.phone-number-id:}") String phoneNumberId,
             @Value("${app.whatsapp.access-token:}") String accessToken,
             @Value("${app.whatsapp.lookback-minutes:90}") int lookbackMinutes,
@@ -54,6 +60,7 @@ public class WhatsAppAutoReplyService {
                 .build();
         this.enabled = enabled;
         this.webhookVerifyToken = webhookVerifyToken == null ? "" : webhookVerifyToken.trim();
+        this.webhookAppSecret = webhookAppSecret == null ? "" : webhookAppSecret.trim();
         this.phoneNumberId = phoneNumberId == null ? "" : phoneNumberId.trim();
         this.accessToken = accessToken == null ? "" : accessToken.trim();
         this.lookbackMinutes = Math.max(5, lookbackMinutes);
@@ -63,6 +70,24 @@ public class WhatsAppAutoReplyService {
 
     public boolean isVerificationTokenValid(String token) {
         return !webhookVerifyToken.isBlank() && webhookVerifyToken.equals(token);
+    }
+
+    public boolean isWebhookSignatureValid(String payload, String signatureHeader) {
+        if (!enabled) {
+            return true;
+        }
+        if (signatureHeader == null || signatureHeader.isBlank()) {
+            return false;
+        }
+        if (webhookAppSecret.isBlank()) {
+            log.warn("WhatsApp webhook enabled but app secret is missing; rejecting webhook event.");
+            return false;
+        }
+
+        String expected = "sha256=" + hmacSha256Hex(payload == null ? "" : payload, webhookAppSecret);
+        byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
+        byte[] providedBytes = signatureHeader.trim().getBytes(StandardCharsets.UTF_8);
+        return MessageDigest.isEqual(expectedBytes, providedBytes);
     }
 
     public void processIncomingWebhook(JsonNode payload) {
@@ -169,5 +194,20 @@ public class WhatsAppAutoReplyService {
             return "";
         }
         return value.replaceAll("\\D", "");
+    }
+
+    private static String hmacSha256Hex(String payload, String secret) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] digest = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (Exception ex) {
+            throw new IllegalStateException("No se pudo validar firma HMAC de WhatsApp", ex);
+        }
     }
 }

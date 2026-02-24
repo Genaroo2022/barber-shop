@@ -9,8 +9,8 @@ import com.barberia.stylebook.domain.enums.AppointmentStatus;
 import com.barberia.stylebook.repository.AppointmentRepository;
 import com.barberia.stylebook.repository.ClientRepository;
 import com.barberia.stylebook.repository.ServiceCatalogRepository;
-import com.barberia.stylebook.web.dto.AppointmentResponse;
 import com.barberia.stylebook.web.dto.CreateAppointmentRequest;
+import com.barberia.stylebook.web.dto.PublicAppointmentResponse;
 import com.barberia.stylebook.web.dto.PublicOccupiedAppointmentResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -101,7 +101,7 @@ class BookingServiceTest {
         when(serviceCatalogRepository.findById(service.getId())).thenReturn(Optional.of(service));
         when(appointmentRepository.existsByServiceIdAndAppointmentAtAndStatusIn(eq(service.getId()), eq(normalizedAt), any()))
                 .thenReturn(false);
-        when(clientRepository.findByPhone(request.clientPhone())).thenReturn(Optional.empty());
+        when(clientRepository.findByPhoneNormalized(PhoneNormalizer.normalize(request.clientPhone()))).thenReturn(Optional.empty());
         when(clientRepository.save(any(Client.class))).thenReturn(newClient);
         when(appointmentRepository.saveAndFlush(any(Appointment.class))).thenAnswer(invocation -> {
             Appointment apt = invocation.getArgument(0);
@@ -110,9 +110,9 @@ class BookingServiceTest {
             return apt;
         });
 
-        AppointmentResponse response = bookingService.create(request);
+        PublicAppointmentResponse response = bookingService.create(request);
 
-        assertEquals("Juan", response.clientName());
+        assertEquals(service.getId(), response.serviceId());
         assertEquals(service.getName(), response.serviceName());
         assertEquals(AppointmentStatus.PENDING, response.status());
         verify(clientRepository).save(any(Client.class));
@@ -120,7 +120,7 @@ class BookingServiceTest {
     }
 
     @Test
-    void create_updatesExistingClientName() {
+    void create_keepsExistingClientName() {
         ServiceCatalog service = buildService(true);
         CreateAppointmentRequest request = request(service.getId(), "+5491111111111", "Juan Actualizado");
         OffsetDateTime normalizedAt = request.appointmentAt().withSecond(0).withNano(0);
@@ -133,13 +133,13 @@ class BookingServiceTest {
         when(serviceCatalogRepository.findById(service.getId())).thenReturn(Optional.of(service));
         when(appointmentRepository.existsByServiceIdAndAppointmentAtAndStatusIn(eq(service.getId()), eq(normalizedAt), any()))
                 .thenReturn(false);
-        when(clientRepository.findByPhone(request.clientPhone())).thenReturn(Optional.of(existing));
+        when(clientRepository.findByPhoneNormalized(PhoneNormalizer.normalize(request.clientPhone()))).thenReturn(Optional.of(existing));
         when(clientRepository.save(existing)).thenReturn(existing);
         when(appointmentRepository.saveAndFlush(any(Appointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         bookingService.create(request);
 
-        assertEquals("Juan Actualizado", existing.getName());
+        assertEquals("Juan Viejo", existing.getName());
         verify(clientRepository).save(eq(existing));
     }
 

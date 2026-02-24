@@ -2,6 +2,7 @@ package com.barberia.stylebook.application.service;
 
 import com.barberia.stylebook.domain.entity.Appointment;
 import com.barberia.stylebook.web.dto.AppointmentResponse;
+import com.barberia.stylebook.web.dto.PublicAppointmentResponse;
 
 public final class AppointmentMapper {
 
@@ -20,6 +21,16 @@ public final class AppointmentMapper {
                 appointment.getAppointmentAt(),
                 appointment.getStatus(),
                 appointment.getNotes()
+        );
+    }
+
+    public static PublicAppointmentResponse toPublicResponse(Appointment appointment) {
+        return new PublicAppointmentResponse(
+                appointment.getId(),
+                appointment.getService().getId(),
+                appointment.getService().getName(),
+                appointment.getAppointmentAt(),
+                appointment.getStatus()
         );
     }
 }

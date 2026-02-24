@@ -16,6 +16,7 @@ import {
 import {
   createAdminGalleryImage,
   deleteAdminGalleryImage,
+  getAdminGalleryUploadSignature,
   listAdminGalleryImages,
   updateAdminGalleryImage,
   type GalleryImageItem,
@@ -62,17 +63,18 @@ const emptyForm: GalleryForm = {
 };
 
 const uploadToCloudinary = async (file: File): Promise<string> => {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Falta configurar Cloudinary (VITE_CLOUDINARY_CLOUD_NAME y VITE_CLOUDINARY_UPLOAD_PRESET)");
-  }
+  const signaturePayload = await getAdminGalleryUploadSignature();
 
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
+  formData.append("api_key", signaturePayload.apiKey);
+  formData.append("timestamp", String(signaturePayload.timestamp));
+  formData.append("signature", signaturePayload.signature);
+  if (signaturePayload.folder) {
+    formData.append("folder", signaturePayload.folder);
+  }
 
-  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${signaturePayload.cloudName}/image/upload`, {
     method: "POST",
     body: formData,
   });
@@ -615,7 +617,7 @@ const GalleryTab = () => {
                 setNewErrors((prev) => ({ ...prev, file: undefined }));
                 setNewMultiTitleErrors({});
               }}
-              className={`max-w-sm ${errorClass(Boolean(newErrors.file))}`}
+              className={`w-full sm:max-w-sm ${errorClass(Boolean(newErrors.file))}`}
             />
             {newErrors.file && <p className="text-xs text-destructive">{newErrors.file}</p>}
           </div>
@@ -773,7 +775,7 @@ const GalleryTab = () => {
                       type="file"
                       accept="image/*"
                       onChange={(e) => setEditingFile(e.target.files?.[0] ?? null)}
-                      className="max-w-sm"
+                      className="w-full sm:max-w-sm"
                     />
                     {editingFile && (
                       <p className="text-xs text-muted-foreground">Archivo seleccionado: {editingFile.name}</p>
@@ -793,7 +795,7 @@ const GalleryTab = () => {
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {isEditing ? (
                     <>
                       <Button size="sm" onClick={() => handleSaveEdit(item.id)}>

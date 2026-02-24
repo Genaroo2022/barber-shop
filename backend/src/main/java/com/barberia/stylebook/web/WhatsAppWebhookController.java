@@ -18,15 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/webhooks/whatsapp")
 public class WhatsAppWebhookController {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final WhatsAppAutoReplyService whatsAppAutoReplyService;
-    private final ObjectMapper objectMapper;
 
-    public WhatsAppWebhookController(
-            WhatsAppAutoReplyService whatsAppAutoReplyService,
-            ObjectMapper objectMapper
-    ) {
+    public WhatsAppWebhookController(WhatsAppAutoReplyService whatsAppAutoReplyService) {
         this.whatsAppAutoReplyService = whatsAppAutoReplyService;
-        this.objectMapper = objectMapper;
     }
 
     @GetMapping(produces = MediaType.TEXT_PLAIN_VALUE)
@@ -51,7 +47,7 @@ public class WhatsAppWebhookController {
         }
         JsonNode jsonPayload;
         try {
-            jsonPayload = objectMapper.readTree(payload);
+            jsonPayload = OBJECT_MAPPER.readTree(payload);
         } catch (JsonProcessingException ex) {
             return ResponseEntity.badRequest().build();
         }

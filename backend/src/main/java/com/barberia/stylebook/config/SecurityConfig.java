@@ -31,7 +31,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/health", "/api/health/").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/health", "/api/health/").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/webhooks/whatsapp").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/webhooks/whatsapp").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()

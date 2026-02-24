@@ -105,14 +105,6 @@ $env:WHATSAPP_ACCESS_TOKEN="<meta-cloud-api-token>"
 $env:WHATSAPP_AUTOREPLY_LOOKBACK_MINUTES="<int>"
 $env:WHATSAPP_AUTOREPLY_COOLDOWN_MINUTES="<int>"
 $env:WHATSAPP_BUSINESS_TIMEZONE="<IANA-timezone>"
-$env:HUGGINGFACE_API_TOKEN="<hf_token>"
-$env:HUGGINGFACE_HAIRCUT_MODEL="<model-id>"
-$env:HUGGINGFACE_HAIRCUT_PREVIEW_ENABLED="<true|false>"
-$env:HUGGINGFACE_HAIRCUT_PREVIEW_MODEL="<model-id>"
-$env:APP_AI_HAIRCUT_MAX_IMAGE_BYTES="5242880"
-$env:APP_SECURITY_AI_MAX_REQUESTS_PER_MINUTE="3"
-$env:APP_SECURITY_AI_MAX_REQUESTS_PER_HOUR="15"
-$env:APP_SECURITY_AI_MAX_CONCURRENT_REQUESTS="2"
 ```
 
 ### Ejecutar backend
@@ -211,7 +203,6 @@ WHATSAPP_AUTOREPLY_ENABLED=true
 WHATSAPP_WEBHOOK_VERIFY_TOKEN=<token-verificacion-meta>
 WHATSAPP_PHONE_NUMBER_ID=<meta-phone-number-id>
 WHATSAPP_ACCESS_TOKEN=<meta-cloud-api-token>
-HUGGINGFACE_API_TOKEN=<hf_token>
 ```
 
 Opcional:
@@ -219,9 +210,6 @@ Opcional:
 ```env
 JWT_EXPIRATION_SECONDS=28800
 PORT=8080
-HUGGINGFACE_HAIRCUT_PREVIEW_ENABLED=true
-HUGGINGFACE_HAIRCUT_PREVIEW_MODEL=Qwen/Qwen-Image-Edit
-APP_SECURITY_AI_MAX_CONCURRENT_REQUESTS=2
 ```
 
 Health check recomendado en Render: `/api/public/services`.
@@ -250,11 +238,11 @@ El repo incluye archivos para SPA routing:
 ## Endpoints principales
 
 Publicos:
+- `GET /api/health`
 - `GET /api/public/services`
 - `GET /api/public/gallery`
 - `GET /api/public/appointments/occupied?serviceId=<UUID>&date=<YYYY-MM-DD>`
 - `POST /api/public/appointments`
-- `POST /api/public/ai/haircut-suggestions`
 - `POST /api/auth/login`
 - `POST /api/auth/login/firebase`
 - `GET /api/webhooks/whatsapp` (verificacion webhook Meta)

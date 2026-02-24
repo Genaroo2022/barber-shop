@@ -7,6 +7,8 @@ import com.barberia.stylebook.repository.AppointmentRepository;
 import com.barberia.stylebook.repository.ServiceCatalogRepository;
 import com.barberia.stylebook.web.dto.AdminServiceUpsertRequest;
 import com.barberia.stylebook.web.dto.ServiceCatalogResponse;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class ServiceCatalogService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "publicServices")
     public List<ServiceCatalogResponse> listPublic() {
         return serviceCatalogRepository.findAll().stream()
                 .filter(s -> Boolean.TRUE.equals(s.getActive()))
@@ -43,6 +46,7 @@ public class ServiceCatalogService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "publicServices", allEntries = true)
     public ServiceCatalogResponse create(AdminServiceUpsertRequest request) {
         String normalizedName = request.name().trim();
         if (serviceCatalogRepository.existsByNameIgnoreCase(normalizedName)) {
@@ -55,6 +59,7 @@ public class ServiceCatalogService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "publicServices", allEntries = true)
     public ServiceCatalogResponse update(UUID id, AdminServiceUpsertRequest request) {
         ServiceCatalog service = serviceCatalogRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Servicio no encontrado"));
@@ -69,6 +74,7 @@ public class ServiceCatalogService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "publicServices", allEntries = true)
     public void delete(UUID id) {
         ServiceCatalog service = serviceCatalogRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Servicio no encontrado"));

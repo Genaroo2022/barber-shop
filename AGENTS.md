@@ -168,6 +168,7 @@ npm run build
 
 - Branch focus remains around admin/public booking hardening and operations UX.
 - Implemented recently:
+  - Public content reactivity: Home services/gallery updates instantly after Admin mutations
   - Gallery improvements (single/multi upload, reorder swap confirmation, bulk delete options)
   - Admin appointments: edit + delete + status editing from modal
   - Admin clients: edit + delete

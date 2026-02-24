@@ -53,6 +53,14 @@ type FetchOccupiedSlotsOptions = {
   minLoadingMs?: number;
 };
 
+type ServicesCachePayload = {
+  version: 1;
+  savedAt: number;
+  data: ServiceItem[];
+};
+
+const SERVICES_CACHE_KEY = "stylebook:public-services:v1";
+
 const phoneHasValidLength = (phone: string): boolean => {
   const digits = phone.replace(/\D/g, "");
   return digits.length >= 8 && digits.length <= 15;
@@ -79,6 +87,48 @@ const getPhoneValidationMessage = (rawPhone: string): string | null => {
   return null;
 };
 
+const isValidServiceItemArray = (value: unknown): value is ServiceItem[] => {
+  if (!Array.isArray(value)) return false;
+  return value.every((item) =>
+    typeof item === "object" &&
+    item !== null &&
+    typeof (item as ServiceItem).id === "string" &&
+    typeof (item as ServiceItem).name === "string" &&
+    typeof (item as ServiceItem).price === "number" &&
+    typeof (item as ServiceItem).durationMinutes === "number" &&
+    typeof (item as ServiceItem).active === "boolean"
+  );
+};
+
+const readCachedServices = (): ServiceItem[] | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(SERVICES_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ServicesCachePayload;
+    if (!parsed || parsed.version !== 1 || !isValidServiceItemArray(parsed.data)) {
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedServices = (services: ServiceItem[]) => {
+  if (typeof window === "undefined") return;
+  const payload: ServicesCachePayload = {
+    version: 1,
+    savedAt: Date.now(),
+    data: services,
+  };
+  try {
+    window.localStorage.setItem(SERVICES_CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // Ignore storage quota/private mode errors.
+  }
+};
+
 const BookingForm = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -96,13 +146,22 @@ const BookingForm = () => {
   const whatsappBusinessPhone = sanitizePhoneDigits(import.meta.env.VITE_WHATSAPP_BOOKING_PHONE || "");
 
   useEffect(() => {
+    const cachedServices = readCachedServices();
+    const hasCachedServices = cachedServices !== null;
+    if (cachedServices) {
+      setServices(cachedServices);
+    }
+
     const fetchServices = async () => {
       try {
         const data = await listPublicServices();
         setServices(data);
+        writeCachedServices(data);
       } catch (err) {
-        const message = err instanceof Error ? err.message : "No se pudieron cargar los servicios";
-        toast.error(message);
+        if (!hasCachedServices) {
+          const message = err instanceof Error ? err.message : "No se pudieron cargar los servicios";
+          toast.error(message);
+        }
       }
     };
     void fetchServices();

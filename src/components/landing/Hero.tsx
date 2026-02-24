@@ -59,10 +59,13 @@ const Hero = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4"
         >
           <a href="#booking">
-            <Button size="lg" className="gold-gradient text-primary-foreground font-semibold px-8 py-6 text-base hover:opacity-90 transition-opacity">
+            <Button
+              size="lg"
+              className="gold-gradient text-primary-foreground font-semibold px-10 py-6 text-base shadow-[0_10px_30px_hsl(40_65%_50%_/_0.28)] hover:opacity-95 transition-opacity"
+            >
               Reservar turno
             </Button>
           </a>
@@ -70,9 +73,18 @@ const Hero = () => {
             <Button
               variant="outline"
               size="lg"
-              className="border-primary/40 bg-background/40 text-primary hover:bg-primary/15 hover:text-primary hover:border-primary/60 px-8 py-6 text-base"
+              className="border-primary/25 bg-background/20 text-foreground/85 hover:bg-primary/10 hover:text-primary hover:border-primary/45 px-7 py-5 text-sm font-medium"
             >
               Ver servicios
+            </Button>
+          </a>
+          <a href="#gallery">
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-primary/25 bg-background/20 text-foreground/85 hover:bg-primary/10 hover:text-primary hover:border-primary/45 px-7 py-5 text-sm font-medium"
+            >
+              Ver galeria
             </Button>
           </a>
         </motion.div>

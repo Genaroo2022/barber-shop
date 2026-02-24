@@ -9,11 +9,14 @@ services:
         condition: service_started
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+      VITE_DEV_PROXY_TARGET: ${VITE_DEV_PROXY_TARGET:-http://backend:8080}
       VITE_LOGIN_PATH: ${VITE_LOGIN_PATH:-/acceso-admin-9x7p}
       VITE_ADMIN_PATH: ${VITE_ADMIN_PATH:-/panel-admin-9x7p}
       VITE_WHATSAPP_BOOKING_PHONE: ${VITE_WHATSAPP_BOOKING_PHONE}
     ports:
       - "5173:5173"
+    cpus: "1.0"
+    mem_limit: 512m
     restart: unless-stopped
 
   db:
@@ -25,6 +28,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
+    cpus: "0.75"
+    mem_limit: 768m
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -43,6 +48,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=2 -XX:TieredStopAtLevel=1
       DB_URL: jdbc:postgresql://db:5432/style_book
       DB_USER: postgres
       DB_PASSWORD: ${DB_PASSWORD}
@@ -62,6 +68,8 @@ services:
       WHATSAPP_BUSINESS_TIMEZONE: ${WHATSAPP_BUSINESS_TIMEZONE:-America/Argentina/Buenos_Aires}
     ports:
       - "8080:8080"
+    cpus: "2.0"
+    mem_limit: 1536m
     restart: unless-stopped
 
 volumes:

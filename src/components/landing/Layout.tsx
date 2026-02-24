@@ -1,13 +1,6 @@
 import { Scissors, Phone, MapPin } from "lucide-react";
 
 const Navbar = () => {
-  const handleAiClick = () => {
-    const section = document.getElementById("ai");
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
       <div className="container px-6 h-16 flex items-center justify-between">
@@ -22,14 +15,13 @@ const Navbar = () => {
           <a href="#booking" className="text-sm text-muted-foreground hover:text-primary transition-colors">Turnos</a>
         </div>
 
-        <button
-          type="button"
-          onClick={handleAiClick}
+        <a
+          href="#booking"
           className="text-sm font-semibold px-5 py-2 rounded-lg border border-primary/40 text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
-          title="Proba ahora la simulacion de corte con IA"
+          title="Reserva tu turno"
         >
-          PROBA TU NUEVO LOOK CON IA
-        </button>
+          RESERVAR
+        </a>
       </div>
     </nav>
   );

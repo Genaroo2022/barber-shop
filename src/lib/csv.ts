@@ -4,7 +4,8 @@ export function toCsvValue(value: string | number | boolean | null | undefined):
   }
 
   const raw = String(value);
-  const escaped = raw.replace(/"/g, '""');
+  const sanitized = /^[\t\r\n ]*[=+\-@]/.test(raw) ? `'${raw}` : raw;
+  const escaped = sanitized.replace(/"/g, '""');
   return `"${escaped}"`;
 }
 

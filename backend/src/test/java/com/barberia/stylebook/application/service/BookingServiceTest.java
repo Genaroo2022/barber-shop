@@ -148,35 +148,32 @@ class BookingServiceTest {
         ServiceCatalog service = buildService(true);
         LocalDate date = LocalDate.of(2026, 2, 20);
         OffsetDateTime pendingAt = date.atTime(10, 0).atOffset(ZoneOffset.UTC);
-        OffsetDateTime completedAt = date.atTime(10, 30).atOffset(ZoneOffset.UTC);
         OffsetDateTime confirmedAt = date.atTime(11, 0).atOffset(ZoneOffset.UTC);
 
-        Appointment pending = new Appointment();
-        pending.setService(service);
-        pending.setAppointmentAt(pendingAt);
-        pending.setStatus(AppointmentStatus.PENDING);
-
-        Appointment completed = new Appointment();
-        completed.setService(service);
-        completed.setAppointmentAt(completedAt);
-        completed.setStatus(AppointmentStatus.COMPLETED);
-
-        Appointment confirmed = new Appointment();
-        confirmed.setService(service);
-        confirmed.setAppointmentAt(confirmedAt);
-        confirmed.setStatus(AppointmentStatus.CONFIRMED);
-
         when(serviceCatalogRepository.findById(service.getId())).thenReturn(Optional.of(service));
-        when(appointmentRepository.findAllByServiceIdAndAppointmentAtGreaterThanEqualAndAppointmentAtLessThan(
+        when(appointmentRepository.findOccupiedSlotsByServiceAndAppointmentAtBetween(
                 eq(service.getId()),
                 any(OffsetDateTime.class),
-                any(OffsetDateTime.class)
-        )).thenReturn(List.of(pending, completed, confirmed));
+                any(OffsetDateTime.class),
+                any()
+        )).thenReturn(List.of(
+                projectionWith(pendingAt),
+                projectionWith(confirmedAt)
+        ));
 
         List<PublicOccupiedAppointmentResponse> occupied = bookingService.listOccupiedAppointments(date, service.getId());
 
         assertEquals(2, occupied.size());
         assertEquals(List.of(pendingAt, confirmedAt), occupied.stream().map(PublicOccupiedAppointmentResponse::appointmentAt).toList());
+    }
+
+    private AppointmentRepository.OccupiedSlotProjection projectionWith(OffsetDateTime appointmentAt) {
+        return new AppointmentRepository.OccupiedSlotProjection() {
+            @Override
+            public OffsetDateTime getAppointmentAt() {
+                return appointmentAt;
+            }
+        };
     }
 
     private CreateAppointmentRequest request(UUID serviceId, String phone, String name) {

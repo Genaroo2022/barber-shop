@@ -101,6 +101,8 @@ $env:BOOTSTRAP_ADMIN_EMAIL="<admin-email>"
 $env:BOOTSTRAP_ADMIN_PASSWORD="<admin-password>"
 $env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_MINUTE="<int>"
 $env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_HOUR="<int>"
+$env:APP_SECURITY_JWT_ADMIN_CACHE_TTL_SECONDS="<int>"
+$env:APP_SECURITY_TRUSTED_PROXY_CIDRS="<cidr_1,cidr_2,...>"
 $env:FIREBASE_API_KEY="<firebase-web-api-key>"
 $env:FIREBASE_ALLOWED_UIDS="<uid_1,uid_2,...>"
 $env:CLOUDINARY_CLOUD_NAME="<cloud-name>"
@@ -384,6 +386,7 @@ curl -X PATCH http://localhost:8080/api/admin/appointments/<APPOINTMENT_ID>/stat
 - En Admin > Turnos, hay refresco automatico periodico y toast de nuevos turnos.
 - En booking publico, un horario reservado desaparece inmediatamente y tambien se recalcula automaticamente desde backend.
 - Login admin migrado a Firebase Authentication (Google + SMS OTP) con reCAPTCHA invisible.
+- El JWT de admin en frontend se guarda en `sessionStorage` (no persiste entre cierres de navegador).
 - El input OTP usa `autoComplete=\"one-time-code\"` para autocompletado nativo en iOS.
 - Acceso admin Firebase restringido por UIDs permitidos (`FIREBASE_ALLOWED_UIDS`); usuarios no listados reciben `Usuario no encontrado`.
 - Rutas frontend de acceso admin/login parametrizadas (`VITE_ADMIN_PATH`, `VITE_LOGIN_PATH`) para evitar rutas publicas obvias.

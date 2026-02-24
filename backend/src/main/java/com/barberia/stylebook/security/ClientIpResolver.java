@@ -15,7 +15,7 @@ public class ClientIpResolver {
     private final List<CidrBlock> trustedProxyCidrs;
 
     public ClientIpResolver(
-            @Value("${app.security.trusted-proxy-cidrs:127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}") List<String> trustedProxyCidrs
+            @Value("${app.security.trusted-proxy-cidrs:127.0.0.1/32,::1/128}") List<String> trustedProxyCidrs
     ) {
         this.trustedProxyCidrs = trustedProxyCidrs.stream()
                 .map(CidrBlock::parse)

@@ -15,6 +15,7 @@ import java.util.Map;
 
 @Service
 public class AuthService {
+    private static final String FIREBASE_PREAUTH_LIMITER_KEY = "firebase:preauth";
 
     private final AdminUserRepository adminUserRepository;
     private final PasswordEncoder passwordEncoder;
@@ -58,7 +59,16 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public LoginResponse loginWithFirebase(String idToken, String clientIp) {
-        FirebaseIdentityService.FirebaseIdentity identity = firebaseIdentityService.lookupByIdToken(idToken);
+        loginRateLimiter.checkAllowed(clientIp, FIREBASE_PREAUTH_LIMITER_KEY);
+
+        FirebaseIdentityService.FirebaseIdentity identity;
+        try {
+            identity = firebaseIdentityService.lookupByIdToken(idToken);
+        } catch (RuntimeException ex) {
+            loginRateLimiter.recordFailure(clientIp, FIREBASE_PREAUTH_LIMITER_KEY);
+            throw ex;
+        }
+
         String limiterKey = StringUtils.hasText(identity.email())
                 ? identity.email().trim().toLowerCase()
                 : StringUtils.hasText(identity.phoneNumber())
@@ -72,6 +82,7 @@ public class AuthService {
         }
 
         loginRateLimiter.recordSuccess(clientIp, limiterKey);
+        loginRateLimiter.recordSuccess(clientIp, FIREBASE_PREAUTH_LIMITER_KEY);
 
         String subject = StringUtils.hasText(identity.email())
                 ? identity.email().trim().toLowerCase()

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -35,8 +36,11 @@ public class AdminGalleryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<GalleryImageResponse>> list() {
-        return ResponseEntity.ok(galleryImageService.listAdmin());
+    public ResponseEntity<List<GalleryImageResponse>> list(
+            @RequestParam(name = "limit", required = false, defaultValue = "500") int limit,
+            @RequestParam(name = "page", required = false, defaultValue = "0") int page
+    ) {
+        return ResponseEntity.ok(galleryImageService.listAdmin(limit, page));
     }
 
     @GetMapping("/upload-signature")

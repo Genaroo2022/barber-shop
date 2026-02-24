@@ -13,7 +13,10 @@ const StatsTab = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [appointments, income] = await Promise.all([listAdminAppointments(), getAdminIncome()]);
+        const [appointments, income] = await Promise.all([
+          listAdminAppointments(selectedMonth),
+          getAdminIncome(selectedMonth),
+        ]);
         setAppointments(
           appointments.map((appointment) => ({
             ...appointment,
@@ -33,8 +36,8 @@ const StatsTab = () => {
         toast.error(message);
       }
     };
-    fetchStats();
-  }, []);
+    void fetchStats();
+  }, [selectedMonth]);
 
   const filteredAppointments = useMemo(
     () => appointments.filter((appointment) => isInMonth(appointment.appointmentAt, selectedMonth)),
@@ -82,14 +85,14 @@ const StatsTab = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (
-          <div key={card.label} className="glass-card rounded-xl p-6">
+          <div key={card.label} className="glass-card rounded-xl p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-3">
               <card.icon className={`w-5 h-5 ${card.color}`} />
               <span className="text-sm text-muted-foreground">{card.label}</span>
             </div>
-            <p className="text-3xl font-display font-bold">{card.value}</p>
+            <p className="text-2xl sm:text-3xl font-display font-bold break-words">{card.value}</p>
           </div>
         ))}
       </div>

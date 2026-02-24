@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -29,8 +30,11 @@ public class AdminClientController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ClientSummaryResponse>> list() {
-        return ResponseEntity.ok(adminClientService.list());
+    public ResponseEntity<List<ClientSummaryResponse>> list(
+            @RequestParam(name = "limit", required = false, defaultValue = "500") int limit,
+            @RequestParam(name = "page", required = false, defaultValue = "0") int page
+    ) {
+        return ResponseEntity.ok(adminClientService.list(limit, page));
     }
 
     @PutMapping("/{id}")

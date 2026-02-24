@@ -81,7 +81,7 @@ const Services = () => {
 
   return (
     <section className="py-24 relative">
-      <div className="container px-6">
+      <div className="container px-4 sm:px-6">
         <motion.div
           id="services"
           initial={{ opacity: 0, y: 20 }}

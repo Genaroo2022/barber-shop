@@ -6,6 +6,7 @@ import com.barberia.stylebook.domain.entity.GalleryImage;
 import com.barberia.stylebook.repository.GalleryImageRepository;
 import com.barberia.stylebook.web.dto.AdminGalleryImageUpsertRequest;
 import com.barberia.stylebook.web.dto.GalleryImageResponse;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,8 @@ import java.util.UUID;
 
 @Service
 public class GalleryImageService {
+    private static final int DEFAULT_PAGE_SIZE = 500;
+    private static final int MAX_PAGE_SIZE = 1000;
 
     private final GalleryImageRepository galleryImageRepository;
 
@@ -30,7 +33,19 @@ public class GalleryImageService {
 
     @Transactional(readOnly = true)
     public List<GalleryImageResponse> listAdmin() {
-        return galleryImageRepository.findAllByOrderBySortOrderAscCreatedAtDesc().stream()
+        return listAdmin(DEFAULT_PAGE_SIZE);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GalleryImageResponse> listAdmin(int limit) {
+        return listAdmin(limit, 0);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GalleryImageResponse> listAdmin(int limit, int page) {
+        int boundedLimit = boundPageSize(limit);
+        int boundedPage = Math.max(0, page);
+        return galleryImageRepository.findAllByOrderBySortOrderAscCreatedAtDesc(PageRequest.of(boundedPage, boundedLimit)).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -91,5 +106,12 @@ public class GalleryImageService {
                 image.getSortOrder(),
                 image.getActive()
         );
+    }
+
+    private int boundPageSize(int requestedLimit) {
+        if (requestedLimit <= 0) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(requestedLimit, MAX_PAGE_SIZE);
     }
 }

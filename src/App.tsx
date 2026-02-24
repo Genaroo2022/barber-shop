@@ -2,16 +2,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type ReactElement, useEffect } from "react";
+import { Suspense, lazy, type ReactElement, useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import { isAuthenticated } from "./lib/auth";
 import { ADMIN_ROUTE, LOGIN_ROUTE } from "./lib/routes";
 
 const queryClient = new QueryClient();
+const Login = lazy(() => import("./pages/Login"));
+const Admin = lazy(() => import("./pages/Admin"));
 const MIN_SCROLL_DURATION_MS = 280;
 const MAX_SCROLL_DURATION_MS = 900;
 const DURATION_PER_PIXEL = 0.45;
@@ -90,15 +90,29 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path={LOGIN_ROUTE} element={<Login />} />
+            <Route
+              path={LOGIN_ROUTE}
+              element={
+                <Suspense fallback={<div className="text-muted-foreground p-6">Cargando...</div>}>
+                  <Login />
+                </Suspense>
+              }
+            />
             <Route
               path={ADMIN_ROUTE}
               element={
                 <RequireAuth>
-                  <Admin />
+                  <Suspense fallback={<div className="text-muted-foreground p-6">Cargando...</div>}>
+                    <Admin />
+                  </Suspense>
                 </RequireAuth>
               }
             />

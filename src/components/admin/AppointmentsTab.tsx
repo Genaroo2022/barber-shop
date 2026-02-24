@@ -109,12 +109,25 @@ const AppointmentsTab = () => {
   const [staleThresholdMinutes, setStaleThresholdMinutes] = useState("30");
   const [stalePendingAppointments, setStalePendingAppointments] = useState<StalePendingAppointmentItem[]>([]);
   const [loadingAssistant, setLoadingAssistant] = useState(false);
+  const appointmentsRequestRef = useRef<AbortController | null>(null);
+  const appointmentsInFlightRef = useRef(false);
 
-  const fetchAppointments = async (options?: { notifyNew?: boolean; silent?: boolean }) => {
+  const fetchAppointments = async (
+    month: string,
+    options?: { notifyNew?: boolean; silent?: boolean; skipIfInFlight?: boolean }
+  ) => {
+    if (options?.skipIfInFlight && appointmentsInFlightRef.current) {
+      return;
+    }
+
+    appointmentsRequestRef.current?.abort();
+    const requestController = new AbortController();
+    appointmentsRequestRef.current = requestController;
+    appointmentsInFlightRef.current = true;
+
     try {
-      const [appointmentsData, servicesData] = await Promise.all([listAdminAppointments(), listAdminServices()]);
+      const appointmentsData = await listAdminAppointments(month, 500, requestController.signal);
       setAppointments(appointmentsData);
-      setServices(servicesData);
 
       const nextIds = new Set(appointmentsData.map((appointment) => appointment.id));
       const knownIds = knownAppointmentIdsRef.current;
@@ -131,6 +144,9 @@ const AppointmentsTab = () => {
       }
       knownAppointmentIdsRef.current = nextIds;
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
       if (!options?.silent) {
         const message = err instanceof Error ? err.message : "Error al cargar turnos";
         toast.error(message);
@@ -139,17 +155,46 @@ const AppointmentsTab = () => {
         }
       }
     } finally {
+      if (appointmentsRequestRef.current === requestController) {
+        appointmentsRequestRef.current = null;
+      }
+      appointmentsInFlightRef.current = false;
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    void fetchAppointments();
-    const interval = setInterval(() => {
-      void fetchAppointments({ notifyNew: true, silent: true });
-    }, 10000);
-    return () => clearInterval(interval);
+    const fetchServices = async () => {
+      try {
+        const servicesData = await listAdminServices();
+        setServices(servicesData);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Error al cargar servicios";
+        toast.error(message);
+      }
+    };
+    void Promise.all([fetchAppointments(selectedMonth), fetchServices()]);
   }, []);
+
+  useEffect(() => {
+    knownAppointmentIdsRef.current = null;
+    setLoading(true);
+    void fetchAppointments(selectedMonth, { silent: true });
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void fetchAppointments(selectedMonth, { notifyNew: true, silent: true, skipIfInFlight: true });
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [selectedMonth]);
+
+  useEffect(
+    () => () => {
+      appointmentsRequestRef.current?.abort();
+    },
+    []
+  );
 
   const filteredAppointments = useMemo(
     () => appointments.filter((appointment) => isInMonth(appointment.appointmentAt, selectedMonth)),
@@ -161,7 +206,7 @@ const AppointmentsTab = () => {
   const updateStatus = async (id: string, status: AppointmentItem["status"]) => {
     try {
       await updateAdminAppointmentStatus(id, status);
-      await fetchAppointments();
+      await fetchAppointments(selectedMonth);
     } catch {
       // no toast for status updates by request
     }
@@ -209,7 +254,7 @@ const AppointmentsTab = () => {
       }
       setEditingAppointment(null);
       setEditForm(emptyEditForm);
-      await fetchAppointments();
+      await fetchAppointments(selectedMonth);
     } catch {
       // no toast for appointment edit by request
     } finally {
@@ -223,7 +268,7 @@ const AppointmentsTab = () => {
       setDeleting(true);
       await deleteAdminAppointment(deleteTarget.id);
       setDeleteTarget(null);
-      await fetchAppointments();
+      await fetchAppointments(selectedMonth);
     } catch {
       // no toast for appointment delete by request
     } finally {
@@ -346,7 +391,7 @@ const AppointmentsTab = () => {
       <div className="glass-card rounded-xl p-4 md:p-5">
         <div className="grid md:grid-cols-[200px_1fr] gap-3 items-center">
           <p className="text-sm text-muted-foreground">Mes a consultar</p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="outline"
@@ -362,7 +407,7 @@ const AppointmentsTab = () => {
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="month-picker-strong"
+              className="month-picker-strong min-w-[180px] flex-1"
             />
             <Button
               type="button"
@@ -379,7 +424,7 @@ const AppointmentsTab = () => {
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -398,7 +443,7 @@ const AppointmentsTab = () => {
       </div>
 
       <div className="glass-card rounded-xl overflow-hidden">
-        <Table>
+        <Table className="min-w-[760px]">
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
               <TableHead className="text-muted-foreground">Cliente</TableHead>
@@ -447,7 +492,7 @@ const AppointmentsTab = () => {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-8 w-8 p-0 text-green-500 hover:text-green-400"
+                              className="h-10 w-10 md:h-8 md:w-8 p-0 text-green-500 hover:text-green-400"
                               onClick={() => updateStatus(apt.id, "CONFIRMED")}
                               title="Confirmar"
                             >
@@ -456,7 +501,7 @@ const AppointmentsTab = () => {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-400"
+                              className="h-10 w-10 md:h-8 md:w-8 p-0 text-red-500 hover:text-red-400"
                               onClick={() => updateStatus(apt.id, "CANCELLED")}
                               title="Cancelar"
                             >
@@ -468,7 +513,7 @@ const AppointmentsTab = () => {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0 text-primary hover:text-primary/80"
+                            className="h-10 w-10 md:h-8 md:w-8 p-0 text-primary hover:text-primary/80"
                             onClick={() => updateStatus(apt.id, "COMPLETED")}
                             title="Completar"
                           >
@@ -478,7 +523,7 @@ const AppointmentsTab = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0"
+                          className="h-10 w-10 md:h-8 md:w-8 p-0"
                           onClick={() => startEdit(apt)}
                           title="Editar turno"
                         >
@@ -487,7 +532,7 @@ const AppointmentsTab = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive/90"
+                          className="h-10 w-10 md:h-8 md:w-8 p-0 text-destructive hover:text-destructive/90"
                           onClick={() => setDeleteTarget(apt)}
                           title="Eliminar turno"
                         >

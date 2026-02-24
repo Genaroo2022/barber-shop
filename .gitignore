@@ -26,6 +26,10 @@ dist-ssr
 # Local secrets / local-only files
 .env
 security-check.http
+.ngrok-mobile.pid
+.ngrok-mobile.log
+.ngrok-mobile.yml
+.ngrok-mobile.urls.json
 
 # Build artifacts
 backend/target/

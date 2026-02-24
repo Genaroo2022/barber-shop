@@ -3,6 +3,7 @@ package com.barberia.stylebook.web;
 import com.barberia.stylebook.application.service.AdminMetricsService;
 import com.barberia.stylebook.application.service.AdminClientService;
 import com.barberia.stylebook.application.service.ManualIncomeService;
+import com.barberia.stylebook.application.exception.BusinessRuleException;
 import com.barberia.stylebook.web.dto.ClientSummaryResponse;
 import com.barberia.stylebook.web.dto.CreateManualIncomeRequest;
 import com.barberia.stylebook.web.dto.IncomeMetricsResponse;
@@ -17,8 +18,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,8 +50,17 @@ public class AdminMetricsController {
     }
 
     @GetMapping("/income")
-    public ResponseEntity<IncomeMetricsResponse> income() {
-        return ResponseEntity.ok(adminMetricsService.income());
+    public ResponseEntity<IncomeMetricsResponse> income(
+            @RequestParam(name = "month", required = false) String month
+    ) {
+        if (month == null || month.isBlank()) {
+            return ResponseEntity.ok(adminMetricsService.income());
+        }
+        try {
+            return ResponseEntity.ok(adminMetricsService.income(YearMonth.parse(month)));
+        } catch (DateTimeParseException ex) {
+            throw new BusinessRuleException("El mes debe tener formato YYYY-MM");
+        }
     }
 
     @PostMapping("/income/manual")

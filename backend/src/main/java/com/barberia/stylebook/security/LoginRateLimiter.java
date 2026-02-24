@@ -1,21 +1,28 @@
 package com.barberia.stylebook.security;
 
 import com.barberia.stylebook.application.exception.TooManyRequestsException;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class LoginRateLimiter {
 
     private static final int MAX_BACKOFF_SECONDS = 300;
     private static final int MAX_EXPONENT = 8;
-    private static final long STALE_ENTRY_SECONDS = 24 * 60 * 60;
+    private static final int MAX_ENTRIES_PER_STORE = 20_000;
 
-    private final Map<String, AttemptState> attemptsByIp = new ConcurrentHashMap<>();
-    private final Map<String, AttemptState> attemptsByEmail = new ConcurrentHashMap<>();
+    private final Cache<String, AttemptState> attemptsByIp = Caffeine.newBuilder()
+            .maximumSize(MAX_ENTRIES_PER_STORE)
+            .expireAfterAccess(Duration.ofHours(24))
+            .build();
+    private final Cache<String, AttemptState> attemptsByEmail = Caffeine.newBuilder()
+            .maximumSize(MAX_ENTRIES_PER_STORE)
+            .expireAfterAccess(Duration.ofHours(24))
+            .build();
 
     public void checkAllowed(String clientIp, String email) {
         long now = Instant.now().getEpochSecond();
@@ -27,16 +34,15 @@ public class LoginRateLimiter {
         long now = Instant.now().getEpochSecond();
         registerFailure(attemptsByIp, normalizeIp(clientIp), now);
         registerFailure(attemptsByEmail, normalizeEmail(email), now);
-        cleanupStaleEntries(now);
     }
 
     public void recordSuccess(String clientIp, String email) {
-        attemptsByIp.remove(normalizeIp(clientIp));
-        attemptsByEmail.remove(normalizeEmail(email));
+        attemptsByIp.invalidate(normalizeIp(clientIp));
+        attemptsByEmail.invalidate(normalizeEmail(email));
     }
 
-    private void checkKey(Map<String, AttemptState> store, String key, long now) {
-        AttemptState state = store.get(key);
+    private void checkKey(Cache<String, AttemptState> store, String key, long now) {
+        AttemptState state = store.getIfPresent(key);
         if (state == null) {
             return;
         }
@@ -45,9 +51,9 @@ public class LoginRateLimiter {
         }
     }
 
-    private void registerFailure(Map<String, AttemptState> store, String key, long now) {
-        store.compute(key, (k, state) -> {
-            AttemptState next = (state == null) ? new AttemptState() : state;
+    private void registerFailure(Cache<String, AttemptState> store, String key, long now) {
+        store.asMap().compute(key, (ignored, existing) -> {
+            AttemptState next = (existing == null) ? new AttemptState() : existing;
             next.failureCount++;
             next.lastFailureEpochSeconds = now;
 
@@ -56,15 +62,6 @@ public class LoginRateLimiter {
             next.blockedUntilEpochSeconds = now + backoff;
             return next;
         });
-    }
-
-    private void cleanupStaleEntries(long now) {
-        cleanup(attemptsByIp, now);
-        cleanup(attemptsByEmail, now);
-    }
-
-    private void cleanup(Map<String, AttemptState> store, long now) {
-        store.entrySet().removeIf(entry -> (now - entry.getValue().lastFailureEpochSeconds) > STALE_ENTRY_SECONDS);
     }
 
     private String normalizeIp(String ip) {

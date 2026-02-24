@@ -15,7 +15,7 @@ const Hero = () => {
       {/* Radial glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
 
-      <div className="container relative z-10 px-6 text-center">
+      <div className="container relative z-10 px-4 sm:px-6 text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -31,7 +31,7 @@ const Hero = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tight mb-6"
+          className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tight mb-6"
         >
           <span className="gold-text">Barber</span>
           <span className="text-foreground">Shop</span>
@@ -64,7 +64,7 @@ const Hero = () => {
           <a href="#booking">
             <Button
               size="lg"
-              className="gold-gradient text-primary-foreground font-semibold px-10 py-6 text-base shadow-[0_10px_30px_hsl(40_65%_50%_/_0.28)] hover:opacity-95 transition-opacity"
+              className="gold-gradient text-primary-foreground font-semibold px-8 sm:px-10 py-5 sm:py-6 text-base shadow-[0_10px_30px_hsl(40_65%_50%_/_0.28)] hover:opacity-95 transition-opacity"
             >
               Reservar turno
             </Button>

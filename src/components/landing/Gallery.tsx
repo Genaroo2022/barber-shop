@@ -50,7 +50,7 @@ const Gallery = () => {
 
   return (
     <section className="py-24 relative">
-      <div className="container px-6">
+      <div className="container px-4 sm:px-6">
         <motion.div
           id="gallery"
           initial={{ opacity: 0, y: 20 }}
@@ -75,7 +75,7 @@ const Gallery = () => {
               className="aspect-square glass-card rounded-xl overflow-hidden group cursor-pointer relative"
             >
               {item.imageUrl ? (
-                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
+                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-secondary/50">
                   <ImageIcon className="w-10 h-10 text-muted-foreground/50" />

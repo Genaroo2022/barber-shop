@@ -60,9 +60,11 @@
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 0.5rem;
+    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
+    overflow-x: hidden;
   }
   [id] {
     scroll-margin-top: 0.5rem;

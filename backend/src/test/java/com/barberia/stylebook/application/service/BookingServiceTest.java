@@ -150,7 +150,7 @@ class BookingServiceTest {
         OffsetDateTime pendingAt = date.atTime(10, 0).atOffset(ZoneOffset.UTC);
         OffsetDateTime confirmedAt = date.atTime(11, 0).atOffset(ZoneOffset.UTC);
 
-        when(serviceCatalogRepository.findById(service.getId())).thenReturn(Optional.of(service));
+        when(serviceCatalogRepository.existsByIdAndActiveTrue(service.getId())).thenReturn(true);
         when(appointmentRepository.findOccupiedSlotsByServiceAndAppointmentAtBetween(
                 eq(service.getId()),
                 any(OffsetDateTime.class),

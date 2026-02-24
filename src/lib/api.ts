@@ -12,6 +12,7 @@ type RequestOptions = {
   method?: string;
   body?: unknown;
   auth?: boolean;
+  signal?: AbortSignal;
 };
 
 export class ApiError extends Error {
@@ -24,9 +25,11 @@ export class ApiError extends Error {
 }
 
 async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = {};
+  const hasJsonBody = options.body !== undefined;
+  if (hasJsonBody) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (options.auth) {
     const token = getAccessToken();
@@ -39,7 +42,8 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method || "GET",
     headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: hasJsonBody ? JSON.stringify(options.body) : undefined,
+    signal: options.signal,
   });
 
   const isJson = response.headers.get("content-type")?.includes("application/json");
@@ -198,8 +202,20 @@ export async function createPublicAppointment(payload: {
   });
 }
 
-export async function listAdminAppointments(): Promise<AppointmentItem[]> {
-  return apiRequest<AppointmentItem[]>("/api/admin/appointments", { auth: true });
+export async function listAdminAppointments(
+  month?: string,
+  limit = 500,
+  signal?: AbortSignal,
+  page = 0
+): Promise<AppointmentItem[]> {
+  const params = new URLSearchParams();
+  if (month) {
+    params.set("month", month);
+  }
+  params.set("limit", String(limit));
+  params.set("page", String(page));
+  const query = params.toString();
+  return apiRequest<AppointmentItem[]>(`/api/admin/appointments?${query}`, { auth: true, signal });
 }
 
 export async function listAdminStalePendingAppointments(
@@ -219,10 +235,11 @@ export async function updateAdminAppointmentStatus(id: string, status: Appointme
 
 export async function listPublicOccupiedAppointments(
   serviceId: string,
-  date: string
+  date: string,
+  signal?: AbortSignal
 ): Promise<PublicOccupiedAppointment[]> {
   const query = new URLSearchParams({ serviceId, date }).toString();
-  return apiRequest<PublicOccupiedAppointment[]>(`/api/public/appointments/occupied?${query}`);
+  return apiRequest<PublicOccupiedAppointment[]>(`/api/public/appointments/occupied?${query}`, { signal });
 }
 
 export async function updateAdminAppointment(
@@ -249,8 +266,9 @@ export async function deleteAdminAppointment(id: string): Promise<void> {
   });
 }
 
-export async function listAdminClients(): Promise<ClientSummary[]> {
-  return apiRequest<ClientSummary[]>("/api/admin/clients", { auth: true });
+export async function listAdminClients(limit = 500, page = 0): Promise<ClientSummary[]> {
+  const query = new URLSearchParams({ limit: String(limit), page: String(page) }).toString();
+  return apiRequest<ClientSummary[]>(`/api/admin/clients?${query}`, { auth: true });
 }
 
 export async function updateAdminClient(
@@ -286,8 +304,9 @@ export async function getAdminOverview(): Promise<OverviewMetrics> {
   return apiRequest<OverviewMetrics>("/api/admin/metrics/overview", { auth: true });
 }
 
-export async function getAdminIncome(): Promise<IncomeMetrics> {
-  return apiRequest<IncomeMetrics>("/api/admin/metrics/income", { auth: true });
+export async function getAdminIncome(month?: string): Promise<IncomeMetrics> {
+  const query = month ? `?${new URLSearchParams({ month }).toString()}` : "";
+  return apiRequest<IncomeMetrics>(`/api/admin/metrics/income${query}`, { auth: true });
 }
 
 export async function createAdminManualIncome(payload: {
@@ -372,8 +391,9 @@ export async function listPublicGalleryImages(): Promise<GalleryImageItem[]> {
   return apiRequest<GalleryImageItem[]>("/api/public/gallery");
 }
 
-export async function listAdminGalleryImages(): Promise<GalleryImageItem[]> {
-  return apiRequest<GalleryImageItem[]>("/api/admin/gallery", { auth: true });
+export async function listAdminGalleryImages(limit = 500, page = 0): Promise<GalleryImageItem[]> {
+  const query = new URLSearchParams({ limit: String(limit), page: String(page) }).toString();
+  return apiRequest<GalleryImageItem[]>(`/api/admin/gallery?${query}`, { auth: true });
 }
 
 export async function getAdminGalleryUploadSignature(): Promise<AdminGalleryUploadSignature> {

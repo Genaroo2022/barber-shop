@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { CalendarIcon, CheckCircle2, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -144,6 +144,8 @@ const BookingForm = () => {
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
   const [redirectCancelled, setRedirectCancelled] = useState(false);
   const whatsappBusinessPhone = sanitizePhoneDigits(import.meta.env.VITE_WHATSAPP_BOOKING_PHONE || "");
+  const occupiedRequestRef = useRef<AbortController | null>(null);
+  const occupiedRequestSequenceRef = useRef(0);
 
   useEffect(() => {
     const cachedServices = readCachedServices();
@@ -254,15 +256,28 @@ const BookingForm = () => {
         setLoadingOccupiedSlots(true);
       }
 
+      occupiedRequestRef.current?.abort();
+      const requestController = new AbortController();
+      occupiedRequestRef.current = requestController;
+      const requestSequence = ++occupiedRequestSequenceRef.current;
+
       try {
-        const occupied = await listPublicOccupiedAppointments(selectedServiceId, selectedDate);
+        const occupied = await listPublicOccupiedAppointments(selectedServiceId, selectedDate, requestController.signal);
+        if (requestSequence !== occupiedRequestSequenceRef.current) {
+          return;
+        }
         const next = new Set(occupied.map((item) => format(new Date(item.appointmentAt), "HH:mm")));
         setOccupiedSlots(next);
         if (!submitted && time && next.has(time)) {
           setTime("");
         }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        throw error;
       } finally {
-        if (showLoadingIndicator) {
+        if (showLoadingIndicator && requestSequence === occupiedRequestSequenceRef.current) {
           const elapsed = Date.now() - startedAt;
           if (elapsed < minLoadingMs) {
             await new Promise((resolve) => setTimeout(resolve, minLoadingMs - elapsed));
@@ -311,6 +326,13 @@ const BookingForm = () => {
     }, 15000);
     return () => clearInterval(interval);
   }, [fetchOccupiedSlots, serviceId, selectedDateKey, submitted]);
+
+  useEffect(
+    () => () => {
+      occupiedRequestRef.current?.abort();
+    },
+    []
+  );
 
   const refreshOccupiedSlotsIfReady = useCallback(() => {
     if (!serviceId || !selectedDateKey) return;
@@ -376,7 +398,7 @@ const BookingForm = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-card rounded-2xl p-12 max-w-lg mx-auto text-center gold-border-glow"
+            className="glass-card rounded-2xl p-6 sm:p-12 max-w-lg mx-auto text-center gold-border-glow"
           >
             <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-6" />
             <h3 className="text-2xl font-display font-bold mb-3">Turno confirmado</h3>
@@ -452,7 +474,7 @@ const BookingForm = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           onSubmit={handleSubmit}
-          className="glass-card rounded-2xl p-8 md:p-12 max-w-lg mx-auto space-y-6"
+          className="glass-card rounded-2xl p-6 sm:p-8 md:p-12 max-w-lg mx-auto space-y-6"
         >
           <div className="space-y-2">
             <Label htmlFor="name" className="text-foreground/80">

@@ -12,17 +12,22 @@ import com.barberia.stylebook.repository.ServiceCatalogRepository;
 import com.barberia.stylebook.web.dto.AdminAppointmentUpsertRequest;
 import com.barberia.stylebook.web.dto.AppointmentResponse;
 import com.barberia.stylebook.web.dto.StalePendingAppointmentResponse;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class AdminAppointmentService {
+    private static final int DEFAULT_PAGE_SIZE = 500;
+    private static final int MAX_PAGE_SIZE = 1000;
     private static final EnumSet<AppointmentStatus> SLOT_OCCUPYING_STATUSES =
             EnumSet.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED);
 
@@ -42,7 +47,47 @@ public class AdminAppointmentService {
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> listAll() {
-        return appointmentRepository.findAllByOrderByAppointmentAtAsc().stream()
+        return listAll(DEFAULT_PAGE_SIZE);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> listAll(int limit) {
+        return listAll(limit, 0);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> listAll(int limit, int page) {
+        int boundedLimit = boundPageSize(limit);
+        int boundedPage = Math.max(0, page);
+        return appointmentRepository.findAllByOrderByAppointmentAtAsc(PageRequest.of(boundedPage, boundedLimit)).stream()
+                .map(AppointmentMapper::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> listByMonth(YearMonth month) {
+        return listByMonth(month, DEFAULT_PAGE_SIZE);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> listByMonth(YearMonth month, int limit) {
+        return listByMonth(month, limit, 0);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> listByMonth(YearMonth month, int limit, int page) {
+        OffsetDateTime from = month.atDay(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime to = month.plusMonths(1).atDay(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        int boundedLimit = boundPageSize(limit);
+        int boundedPage = Math.max(0, page);
+
+        return appointmentRepository
+                .findAllByAppointmentAtGreaterThanEqualAndAppointmentAtLessThanOrderByAppointmentAtAsc(
+                        from,
+                        to,
+                        PageRequest.of(boundedPage, boundedLimit)
+                )
+                .stream()
                 .map(AppointmentMapper::toResponse)
                 .toList();
     }
@@ -150,5 +195,12 @@ public class AdminAppointmentService {
 
     private boolean occupiesSlot(AppointmentStatus status) {
         return SLOT_OCCUPYING_STATUSES.contains(status);
+    }
+
+    private int boundPageSize(int requestedLimit) {
+        if (requestedLimit <= 0) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(requestedLimit, MAX_PAGE_SIZE);
     }
 }

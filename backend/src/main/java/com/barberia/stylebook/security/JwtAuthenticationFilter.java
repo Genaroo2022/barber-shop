@@ -21,10 +21,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String PREFIX = "Bearer ";
     private final JwtService jwtService;
     private final AdminUserRepository adminUserRepository;
+    private final AdminAuthorizationCache adminAuthorizationCache;
 
-    public JwtAuthenticationFilter(JwtService jwtService, AdminUserRepository adminUserRepository) {
+    public JwtAuthenticationFilter(
+            JwtService jwtService,
+            AdminUserRepository adminUserRepository,
+            AdminAuthorizationCache adminAuthorizationCache
+    ) {
         this.jwtService = jwtService;
         this.adminUserRepository = adminUserRepository;
+        this.adminAuthorizationCache = adminAuthorizationCache;
     }
 
     @Override
@@ -48,11 +54,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             return;
                         }
 
-                        adminUserRepository.findByEmailIgnoreCase(subject)
-                                .filter(user -> Boolean.TRUE.equals(user.getActive()))
-                                .map(AdminUser::getRole)
-                                .filter(role -> "ADMIN".equalsIgnoreCase(role))
-                                .ifPresent(role -> setAdminAuthentication(subject));
+                        boolean allowed = adminAuthorizationCache.isAllowed(
+                                subject,
+                                () -> adminUserRepository.findByEmailIgnoreCase(subject)
+                                        .filter(user -> Boolean.TRUE.equals(user.getActive()))
+                                        .map(AdminUser::getRole)
+                                        .filter(role -> "ADMIN".equalsIgnoreCase(role))
+                                        .isPresent()
+                        );
+                        if (allowed) {
+                            setAdminAuthentication(subject);
+                        }
                     });
                 }
             }

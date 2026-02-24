@@ -159,14 +159,14 @@ const ClientsTab = () => {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button variant="outline" size="sm" onClick={() => setMergeOpen(true)}>
+        <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setMergeOpen(true)}>
           <ArrowRightLeft className="w-4 h-4 mr-2" />
           Fusionar clientes
         </Button>
       </div>
 
       <div className="glass-card rounded-xl overflow-hidden">
-        <Table>
+        <Table className="min-w-[680px]">
         <TableHeader>
           <TableRow className="border-border hover:bg-transparent">
             <TableHead className="text-muted-foreground">Nombre</TableHead>
@@ -192,13 +192,13 @@ const ClientsTab = () => {
                 <TableCell className="text-sm text-muted-foreground">{client.lastVisit}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => startEdit(client)}>
+                    <Button size="sm" variant="ghost" className="h-10 w-10 md:h-8 md:w-8 p-0" onClick={() => startEdit(client)}>
                       <Pencil className="w-4 h-4" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive/90"
+                      className="h-10 w-10 md:h-8 md:w-8 p-0 text-destructive hover:text-destructive/90"
                       onClick={() => setDeleteTarget(client)}
                       title="Eliminar cliente"
                     >

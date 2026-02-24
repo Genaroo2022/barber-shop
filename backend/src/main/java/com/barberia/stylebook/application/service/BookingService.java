@@ -94,17 +94,22 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public List<PublicOccupiedAppointmentResponse> listOccupiedAppointments(LocalDate date, java.util.UUID serviceId) {
-        ServiceCatalog service = serviceCatalogRepository.findById(serviceId)
-                .orElseThrow(() -> new NotFoundException("Servicio no encontrado"));
+        if (!serviceCatalogRepository.existsByIdAndActiveTrue(serviceId)) {
+            throw new NotFoundException("Servicio no encontrado");
+        }
 
         OffsetDateTime from = date.atStartOfDay().atOffset(ZoneOffset.UTC);
         OffsetDateTime to = date.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
 
         return appointmentRepository
-                .findAllByServiceIdAndAppointmentAtGreaterThanEqualAndAppointmentAtLessThan(service.getId(), from, to)
+                .findOccupiedSlotsByServiceAndAppointmentAtBetween(
+                        serviceId,
+                        from,
+                        to,
+                        SLOT_OCCUPYING_STATUSES
+                )
                 .stream()
-                .filter(appointment -> SLOT_OCCUPYING_STATUSES.contains(appointment.getStatus()))
-                .map(appointment -> new PublicOccupiedAppointmentResponse(appointment.getAppointmentAt()))
+                .map(slot -> new PublicOccupiedAppointmentResponse(slot.getAppointmentAt()))
                 .toList();
     }
 }

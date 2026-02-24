@@ -75,7 +75,10 @@ const IncomeTab = () => {
 
   const fetchIncome = async () => {
     try {
-      const [income, appointments] = await Promise.all([getAdminIncome(), listAdminAppointments()]);
+      const [income, appointments] = await Promise.all([
+        getAdminIncome(selectedMonth),
+        listAdminAppointments(selectedMonth),
+      ]);
       setManualEntries(
         income.manualEntries.map((entry) => ({
           ...entry,
@@ -97,8 +100,8 @@ const IncomeTab = () => {
   };
 
   useEffect(() => {
-    fetchIncome();
-  }, []);
+    void fetchIncome();
+  }, [selectedMonth]);
 
   const errorClass = (hasError: boolean) => (hasError ? "border-destructive focus-visible:ring-destructive" : "");
   const formatPrice = (n: number) => `$${n.toLocaleString("es-AR")}`;
@@ -280,7 +283,7 @@ const IncomeTab = () => {
         <div className="grid md:grid-cols-[200px_1fr_auto] gap-3 items-center">
           <p className="text-sm text-muted-foreground">Mes a consultar</p>
           <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
-          <Button variant="outline" size="sm" onClick={exportIncomeCsv}>
+          <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={exportIncomeCsv}>
             <Download className="w-4 h-4 mr-2" />
             Descargar
           </Button>
@@ -405,18 +408,18 @@ const IncomeTab = () => {
             {filteredManualEntries.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
+                className="flex flex-col gap-3 py-2 border-b border-border/50 last:border-0 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="font-medium text-sm">{entry.occurredOn}</p>
                   <p className="text-xs text-muted-foreground">{entry.notes || "Sin notas"}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <p className="font-display font-semibold gold-text">{formatPrice(entry.total)}</p>
                   <p className="text-xs text-muted-foreground">
                     Monto {formatPrice(entry.amount)} | Propina {formatPrice(entry.tipAmount)}
                   </p>
-                  <div className="flex justify-end gap-2 mt-2">
+                  <div className="flex flex-wrap justify-start gap-2 mt-2 sm:justify-end">
                     <Button size="sm" variant="secondary" onClick={() => startEditManualIncome(entry)}>
                       Editar
                     </Button>

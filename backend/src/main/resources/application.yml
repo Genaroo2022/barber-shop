@@ -9,7 +9,7 @@ spring:
         format_sql: true
     open-in-view: false
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
   cache:
     type: caffeine

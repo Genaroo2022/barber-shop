@@ -3,10 +3,10 @@ import { Scissors, Phone, MapPin } from "lucide-react";
 const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
-      <div className="container px-6 h-16 flex items-center justify-between">
+      <div className="container px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
         <a href="#top" className="flex items-center gap-2">
           <Scissors className="w-5 h-5 text-primary" />
-          <span className="font-display text-lg font-bold gold-text">Barber Shop</span>
+          <span className="font-display text-base sm:text-lg font-bold gold-text">Barber Shop</span>
         </a>
 
         <div className="hidden md:flex items-center gap-8">
@@ -17,7 +17,7 @@ const Navbar = () => {
 
         <a
           href="#booking"
-          className="text-sm font-semibold px-5 py-2 rounded-lg border border-primary/40 text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+          className="text-xs sm:text-sm font-semibold px-3 sm:px-5 h-11 inline-flex items-center rounded-lg border border-primary/40 text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
           title="Reserva tu turno"
         >
           RESERVAR
@@ -36,7 +36,7 @@ const Footer = () => {
             <Scissors className="w-5 h-5 text-primary" />
             <span className="font-display font-bold gold-text">Barber Shop</span>
           </div>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1"><Phone className="w-4 h-4" /> Consulta horarios</span>
             <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> Atencion a domicilio</span>
           </div>

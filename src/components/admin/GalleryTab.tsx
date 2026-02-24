@@ -54,6 +54,8 @@ type PendingSortSwap = {
 };
 
 type BulkDeleteMode = "selected" | "all";
+const MAX_UPLOAD_CONCURRENCY = 3;
+const MAX_DELETE_CONCURRENCY = 4;
 
 const emptyForm: GalleryForm = {
   title: "",
@@ -61,6 +63,16 @@ const emptyForm: GalleryForm = {
   sortOrder: "0",
   active: true,
 };
+
+async function runWithConcurrency<T>(items: T[], concurrency: number, task: (item: T) => Promise<void>): Promise<void> {
+  if (items.length === 0) return;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async (_, workerIndex) => {
+    for (let index = workerIndex; index < items.length; index += Math.min(concurrency, items.length)) {
+      await task(items[index]);
+    }
+  });
+  await Promise.all(workers);
+}
 
 const uploadToCloudinary = async (file: File): Promise<string> => {
   const signaturePayload = await getAdminGalleryUploadSignature();
@@ -316,17 +328,20 @@ const GalleryTab = () => {
       const validatedTitles = uploadMode === "multiple"
         ? validateMultiTitles(newFileTitles, selectedFiles.length).titles
         : [];
-
-      for (let index = 0; index < selectedFiles.length; index += 1) {
-        const file = selectedFiles[index];
-        const uploadedUrl = await uploadToCloudinary(file);
+      const payloads = selectedFiles.map((file, index) => ({
+        file,
+        title: uploadMode === "single" ? validation.payload.title : validatedTitles[index],
+        sortOrder: nextAvailableSortOrder(baseSortOrder + index, takenSortOrders),
+      }));
+      await runWithConcurrency(payloads, MAX_UPLOAD_CONCURRENCY, async (item) => {
+        const uploadedUrl = await uploadToCloudinary(item.file);
         await createAdminGalleryImage({
           ...validation.payload,
-          title: uploadMode === "single" ? validation.payload.title : validatedTitles[index],
+          title: item.title,
           imageUrl: uploadedUrl,
-          sortOrder: nextAvailableSortOrder(baseSortOrder + index, takenSortOrders),
+          sortOrder: item.sortOrder,
         });
-      }
+      });
 
       toast.success(selectedFiles.length > 1 ? "Imagenes agregadas" : "Imagen agregada");
       resetCreateForm();
@@ -383,9 +398,9 @@ const GalleryTab = () => {
 
     try {
       setBulkDeleting(true);
-      for (let index = 0; index < idsToDelete.length; index += 1) {
-        await deleteAdminGalleryImage(idsToDelete[index]);
-      }
+      await runWithConcurrency(idsToDelete, MAX_DELETE_CONCURRENCY, async (id) => {
+        await deleteAdminGalleryImage(id);
+      });
       toast.success(
         idsToDelete.length === 1
           ? "Imagen eliminada"

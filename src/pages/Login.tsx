@@ -145,8 +145,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6">
-      <div className="glass-card rounded-2xl p-8 md:p-12 w-full max-w-md gold-border-glow">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 sm:px-6">
+      <div className="glass-card rounded-2xl p-6 sm:p-8 md:p-12 w-full max-w-md gold-border-glow">
         <div className="text-center mb-8">
           <Scissors className="w-10 h-10 text-primary mx-auto mb-4" />
           <h1 className="text-2xl font-display font-bold">Panel Admin</h1>
@@ -213,7 +213,7 @@ const Login = () => {
                   placeholder="123456"
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                  className="bg-white text-black placeholder:text-gray-500 border-gray-300 focus:border-primary tracking-[0.35em] text-center"
+                  className="bg-white text-black placeholder:text-gray-500 border-gray-300 focus:border-primary tracking-[0.25em] sm:tracking-[0.35em] text-center"
                 />
               </div>
               <Button

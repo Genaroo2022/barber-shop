@@ -4,10 +4,14 @@ import com.barberia.stylebook.domain.entity.Appointment;
 import com.barberia.stylebook.domain.enums.AppointmentStatus;
 import com.barberia.stylebook.repository.AppointmentRepository;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -15,13 +19,14 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class WhatsAppAutoReplyService {
@@ -30,6 +35,9 @@ public class WhatsAppAutoReplyService {
             EnumSet.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final int HTTP_CONNECT_TIMEOUT_MS = 5_000;
+    private static final int HTTP_READ_TIMEOUT_MS = 5_000;
+    private static final int MAX_COOLDOWN_CACHE_ENTRIES = 50_000;
 
     private final AppointmentRepository appointmentRepository;
     private final RestClient restClient;
@@ -41,7 +49,7 @@ public class WhatsAppAutoReplyService {
     private final int lookbackMinutes;
     private final int cooldownMinutes;
     private final ZoneId businessZone;
-    private final Map<String, OffsetDateTime> repliedAtByPhone = new ConcurrentHashMap<>();
+    private final Cache<String, OffsetDateTime> repliedAtByPhone;
 
     public WhatsAppAutoReplyService(
             AppointmentRepository appointmentRepository,
@@ -57,6 +65,7 @@ public class WhatsAppAutoReplyService {
         this.appointmentRepository = appointmentRepository;
         this.restClient = RestClient.builder()
                 .baseUrl("https://graph.facebook.com")
+                .requestFactory(buildRequestFactory())
                 .build();
         this.enabled = enabled;
         this.webhookVerifyToken = webhookVerifyToken == null ? "" : webhookVerifyToken.trim();
@@ -66,6 +75,10 @@ public class WhatsAppAutoReplyService {
         this.lookbackMinutes = Math.max(5, lookbackMinutes);
         this.cooldownMinutes = Math.max(1, cooldownMinutes);
         this.businessZone = ZoneId.of(businessTimezone);
+        this.repliedAtByPhone = Caffeine.newBuilder()
+                .maximumSize(MAX_COOLDOWN_CACHE_ENTRIES)
+                .expireAfterWrite(Duration.ofDays(2))
+                .build();
     }
 
     public boolean isVerificationTokenValid(String token) {
@@ -115,7 +128,7 @@ public class WhatsAppAutoReplyService {
                     if (fromPhone.isBlank()) {
                         continue;
                     }
-                    maybeReplyToClient(fromPhone);
+                    CompletableFuture.runAsync(() -> maybeReplyToClient(fromPhone));
                 }
             }
         }
@@ -126,16 +139,22 @@ public class WhatsAppAutoReplyService {
     }
 
     private void maybeReplyToClient(String incomingPhoneDigits) {
-        if (isInCooldown(incomingPhoneDigits)) {
+        OffsetDateTime now = OffsetDateTime.now();
+        if (isInCooldown(incomingPhoneDigits, now)) {
             return;
         }
 
-        OffsetDateTime createdFrom = OffsetDateTime.now().minusMinutes(lookbackMinutes);
+        OffsetDateTime createdFrom = now.minusMinutes(lookbackMinutes);
+        OffsetDateTime appointmentAfter = now.minusDays(1);
         Optional<Appointment> candidate = appointmentRepository
-                .findRecentByStatusesAndCreatedAtAfter(REPLY_ELIGIBLE_STATUSES, createdFrom)
+                .findRecentEligibleByClientPhoneNormalized(
+                        REPLY_ELIGIBLE_STATUSES,
+                        incomingPhoneDigits,
+                        createdFrom,
+                        appointmentAfter,
+                        PageRequest.of(0, 1)
+                )
                 .stream()
-                .filter(appointment -> normalizeDigits(appointment.getClient().getPhone()).equals(incomingPhoneDigits))
-                .filter(appointment -> appointment.getAppointmentAt().isAfter(OffsetDateTime.now().minusDays(1)))
                 .findFirst();
 
         if (candidate.isEmpty()) {
@@ -145,15 +164,15 @@ public class WhatsAppAutoReplyService {
         Appointment appointment = candidate.get();
         String body = buildAutoReplyBody(appointment);
         sendTextMessage(incomingPhoneDigits, body);
-        repliedAtByPhone.put(incomingPhoneDigits, OffsetDateTime.now());
+        repliedAtByPhone.put(incomingPhoneDigits, now);
     }
 
-    private boolean isInCooldown(String phoneDigits) {
-        OffsetDateTime lastReplyAt = repliedAtByPhone.get(phoneDigits);
+    private boolean isInCooldown(String phoneDigits, OffsetDateTime now) {
+        OffsetDateTime lastReplyAt = repliedAtByPhone.getIfPresent(phoneDigits);
         if (lastReplyAt == null) {
             return false;
         }
-        return lastReplyAt.isAfter(OffsetDateTime.now().minusMinutes(cooldownMinutes));
+        return lastReplyAt.isAfter(now.minusMinutes(cooldownMinutes));
     }
 
     private String buildAutoReplyBody(Appointment appointment) {
@@ -209,5 +228,12 @@ public class WhatsAppAutoReplyService {
         } catch (Exception ex) {
             throw new IllegalStateException("No se pudo validar firma HMAC de WhatsApp", ex);
         }
+    }
+
+    private static SimpleClientHttpRequestFactory buildRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
+        factory.setReadTimeout(HTTP_READ_TIMEOUT_MS);
+        return factory;
     }
 }

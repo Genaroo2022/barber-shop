@@ -32,8 +32,7 @@ public class ServiceCatalogService {
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = "publicServices")
     public List<ServiceCatalogResponse> listPublic() {
-        return serviceCatalogRepository.findAll().stream()
-                .filter(s -> Boolean.TRUE.equals(s.getActive()))
+        return serviceCatalogRepository.findAllByActiveTrueOrderByNameAsc().stream()
                 .map(this::toResponse)
                 .toList();
     }

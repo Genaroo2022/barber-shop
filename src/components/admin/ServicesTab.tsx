@@ -329,7 +329,7 @@ const ServicesTab = () => {
                     </label>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {isEditing ? (
                     <>
                       <Button size="sm" onClick={() => handleUpdate(service.id)}>

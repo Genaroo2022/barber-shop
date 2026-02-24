@@ -1,6 +1,7 @@
 package com.barberia.stylebook.web;
 
 import com.barberia.stylebook.application.service.AdminAppointmentService;
+import com.barberia.stylebook.application.exception.BusinessRuleException;
 import com.barberia.stylebook.web.dto.AdminAppointmentUpsertRequest;
 import com.barberia.stylebook.web.dto.AppointmentResponse;
 import com.barberia.stylebook.web.dto.StalePendingAppointmentResponse;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,8 +35,19 @@ public class AdminAppointmentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AppointmentResponse>> list() {
-        return ResponseEntity.ok(adminAppointmentService.listAll());
+    public ResponseEntity<List<AppointmentResponse>> list(
+            @RequestParam(name = "month", required = false) String month,
+            @RequestParam(name = "limit", required = false, defaultValue = "500") int limit,
+            @RequestParam(name = "page", required = false, defaultValue = "0") int page
+    ) {
+        if (month == null || month.isBlank()) {
+            return ResponseEntity.ok(adminAppointmentService.listAll(limit, page));
+        }
+        try {
+            return ResponseEntity.ok(adminAppointmentService.listByMonth(YearMonth.parse(month), limit, page));
+        } catch (DateTimeParseException ex) {
+            throw new BusinessRuleException("El mes debe tener formato YYYY-MM");
+        }
     }
 
     @GetMapping("/stale-pending")

@@ -3,6 +3,7 @@ package com.barberia.stylebook.application.service;
 import com.barberia.stylebook.application.exception.BusinessRuleException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -17,6 +18,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class FirebaseIdentityService {
+    private static final int HTTP_CONNECT_TIMEOUT_MS = 5_000;
+    private static final int HTTP_READ_TIMEOUT_MS = 5_000;
+
     private final RestClient restClient;
     private final String firebaseApiKey;
     private final Set<String> allowedUids;
@@ -27,6 +31,7 @@ public class FirebaseIdentityService {
     ) {
         this.restClient = RestClient.builder()
                 .baseUrl("https://identitytoolkit.googleapis.com")
+                .requestFactory(buildRequestFactory())
                 .build();
         this.firebaseApiKey = firebaseApiKey;
         this.allowedUids = Arrays.stream(allowedUidsRaw.split(","))
@@ -82,5 +87,12 @@ public class FirebaseIdentityService {
     }
 
     private record LookupUser(String localId, String email, String phoneNumber, Boolean disabled) {
+    }
+
+    private static SimpleClientHttpRequestFactory buildRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
+        factory.setReadTimeout(HTTP_READ_TIMEOUT_MS);
+        return factory;
     }
 }

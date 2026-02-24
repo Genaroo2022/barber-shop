@@ -1,21 +1,23 @@
 package com.barberia.stylebook.security;
 
 import com.barberia.stylebook.application.exception.TooManyRequestsException;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
 @Component
 public class BookingRateLimiter {
+    private static final int MAX_IP_ENTRIES = 20_000;
 
     private final int maxPerMinute;
     private final int maxPerHour;
-    private final Map<String, Deque<Long>> attemptsByIp = new ConcurrentHashMap<>();
+    private final Cache<String, AttemptWindow> attemptsByIp;
 
     public BookingRateLimiter(
             @Value("${app.security.booking.max-requests-per-minute:12}") int maxPerMinute,
@@ -23,20 +25,22 @@ public class BookingRateLimiter {
     ) {
         this.maxPerMinute = maxPerMinute;
         this.maxPerHour = maxPerHour;
+        this.attemptsByIp = Caffeine.newBuilder()
+                .maximumSize(MAX_IP_ENTRIES)
+                .expireAfterAccess(Duration.ofHours(2))
+                .build();
     }
 
     public void checkAllowed(String clientIp) {
         String key = normalizeIp(clientIp);
         long now = Instant.now().getEpochSecond();
-        Deque<Long> attempts = attemptsByIp.computeIfAbsent(key, ignored -> new ConcurrentLinkedDeque<>());
-        purgeOld(attempts, now);
+        AttemptWindow window = attemptsByIp.get(key, ignored -> new AttemptWindow());
 
-        long attemptsInLastMinute = attempts.stream().filter(ts -> ts > now - 60).count();
-        if (attemptsInLastMinute >= maxPerMinute) {
+        if (window.attemptsInLastMinute(now) >= maxPerMinute) {
             throw new TooManyRequestsException("Demasiadas reservas en poco tiempo. Intenta nuevamente en 1 minuto.");
         }
 
-        if (attempts.size() >= maxPerHour) {
+        if (window.attemptsInLastHour(now) >= maxPerHour) {
             throw new TooManyRequestsException("Demasiadas reservas desde tu IP. Intenta nuevamente mas tarde.");
         }
     }
@@ -44,20 +48,8 @@ public class BookingRateLimiter {
     public void recordAttempt(String clientIp) {
         String key = normalizeIp(clientIp);
         long now = Instant.now().getEpochSecond();
-        Deque<Long> attempts = attemptsByIp.computeIfAbsent(key, ignored -> new ConcurrentLinkedDeque<>());
-        attempts.addLast(now);
-        purgeOld(attempts, now);
-    }
-
-    private void purgeOld(Deque<Long> attempts, long now) {
-        long threshold = now - 3600;
-        while (true) {
-            Long head = attempts.peekFirst();
-            if (head == null || head >= threshold) {
-                return;
-            }
-            attempts.pollFirst();
-        }
+        AttemptWindow window = attemptsByIp.get(key, ignored -> new AttemptWindow());
+        window.record(now);
     }
 
     private String normalizeIp(String ip) {
@@ -65,5 +57,38 @@ public class BookingRateLimiter {
             return "unknown";
         }
         return ip.trim();
+    }
+
+    private static final class AttemptWindow {
+        private final Deque<Long> minuteAttempts = new ArrayDeque<>();
+        private final Deque<Long> hourAttempts = new ArrayDeque<>();
+
+        synchronized long attemptsInLastMinute(long nowEpochSeconds) {
+            purge(nowEpochSeconds);
+            return minuteAttempts.size();
+        }
+
+        synchronized long attemptsInLastHour(long nowEpochSeconds) {
+            purge(nowEpochSeconds);
+            return hourAttempts.size();
+        }
+
+        synchronized void record(long nowEpochSeconds) {
+            purge(nowEpochSeconds);
+            minuteAttempts.addLast(nowEpochSeconds);
+            hourAttempts.addLast(nowEpochSeconds);
+        }
+
+        private void purge(long nowEpochSeconds) {
+            long minuteThreshold = nowEpochSeconds - 60;
+            while (!minuteAttempts.isEmpty() && minuteAttempts.peekFirst() <= minuteThreshold) {
+                minuteAttempts.pollFirst();
+            }
+
+            long hourThreshold = nowEpochSeconds - 3600;
+            while (!hourAttempts.isEmpty() && hourAttempts.peekFirst() <= hourThreshold) {
+                hourAttempts.pollFirst();
+            }
+        }
     }
 }

@@ -36,19 +36,19 @@ const Admin = () => {
       )}
 
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex flex-col transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 max-w-[85vw] bg-card border-r border-border flex max-h-screen flex-col transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="p-6 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Scissors className="w-5 h-5 text-primary" />
             <span className="font-display font-bold gold-text">Admin</span>
           </div>
-          <button className="md:hidden text-muted-foreground" onClick={() => setSidebarOpen(false)}>
+          <button className="md:hidden text-muted-foreground h-10 w-10 inline-flex items-center justify-center rounded-md" onClick={() => setSidebarOpen(false)}>
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -80,14 +80,14 @@ const Admin = () => {
       </aside>
 
       <main className="flex-1 min-w-0">
-        <header className="h-16 border-b border-border flex items-center px-6 gap-4">
-          <button className="md:hidden text-muted-foreground" onClick={() => setSidebarOpen(true)}>
+        <header className="h-16 border-b border-border flex items-center px-4 sm:px-6 gap-4">
+          <button className="md:hidden text-muted-foreground h-10 w-10 inline-flex items-center justify-center rounded-md" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
-          <h1 className="font-display text-xl font-semibold">{tabs.find((t) => t.id === activeTab)?.label}</h1>
+          <h1 className="font-display text-lg sm:text-xl font-semibold truncate">{tabs.find((t) => t.id === activeTab)?.label}</h1>
         </header>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {activeTab === "appointments" && <AppointmentsTab />}
           {activeTab === "clients" && <ClientsTab />}
           {activeTab === "stats" && <StatsTab />}

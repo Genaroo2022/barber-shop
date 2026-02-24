@@ -1,5 +1,5 @@
 import { FirebaseApp, initializeApp } from "firebase/app";
-import { Auth, GoogleAuthProvider, getAuth } from "firebase/auth";
+import { Auth, GoogleAuthProvider, User, getAuth, onAuthStateChanged } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -36,4 +36,33 @@ export const getGoogleProvider = (): GoogleAuthProvider => {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
   return provider;
+};
+
+export const resolveFirebaseUser = async (timeoutMs = 10000): Promise<User | null> => {
+  const auth = getFirebaseAuth();
+  if (auth.currentUser) {
+    return auth.currentUser;
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let unsubscribe: (() => void) | null = null;
+    let timeoutId: number | null = null;
+
+    const finish = (user: User | null) => {
+      if (settled) return;
+      settled = true;
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      if (unsubscribe) unsubscribe();
+      resolve(user);
+    };
+
+    unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => finish(user),
+      () => finish(null)
+    );
+
+    timeoutId = window.setTimeout(() => finish(auth.currentUser), timeoutMs);
+  });
 };

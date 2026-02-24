@@ -7,6 +7,7 @@ This repository contains a personal project for barbershop appointment managemen
 Core business capabilities:
 - Public booking flow for clients
 - Reactive public slot availability (occupied slots hidden without page reload)
+- Fast public services load with backend cache + frontend local fallback
 - Admin login and protected backoffice
 - Appointment lifecycle management (`PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`)
 - Admin appointment management (list, edit, status update, delete)
@@ -121,6 +122,7 @@ npm run dev
 ## API Conventions
 
 Public endpoints:
+- `GET /api/health`
 - `GET /api/public/services`
 - `POST /api/public/appointments`
 - `GET /api/public/appointments/occupied`
@@ -168,6 +170,13 @@ npm run build
 
 - Branch focus remains around admin/public booking hardening and operations UX.
 - Implemented recently:
+  - IA feature removed from frontend/backend (no public AI endpoint)
+  - ngrok-specific local scripts/docs removed from repo
+  - Public lightweight health endpoint for external uptime monitors: `GET /api/health` (no DB usage)
+  - Public services performance hardening:
+    - Backend Caffeine cache (`publicServices`) with TTL
+    - Cache invalidation on admin service create/update/delete
+    - Frontend stale-while-revalidate fallback from `localStorage`
   - Public content reactivity: Home services/gallery updates instantly after Admin mutations
   - Gallery improvements (single/multi upload, reorder swap confirmation, bulk delete options)
   - Admin appointments: edit + delete + status editing from modal

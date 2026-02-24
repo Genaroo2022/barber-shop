@@ -42,7 +42,7 @@ docker compose down
 ## Estado actual importante
 
 - El backend ejecuta migraciones automaticamente al iniciar (Flyway via `SchemaMigrationConfig`).
-- Si la DB local esta vacia, se aplican `V1`, `V2` y `V3` al levantar backend.
+- Si la DB local esta vacia, se aplican `V1..V5` al levantar backend.
 - Capacidades relevantes:
   - CRUD de servicios en admin
   - Gestion de galeria en admin y consumo publico (incluye carga multiple y borrado masivo en admin)
@@ -56,6 +56,11 @@ docker compose down
   - Confirmacion de reserva iniciada por el usuario via WhatsApp desde pantalla de exito
   - Polling en admin de turnos + toast cuando llegan turnos nuevos (sin recargar pagina)
   - Rate limiting para login y para reservas publicas por IP
+  - Endpoint publico liviano para monitoreo externo: `GET /api/health` (sin acceso a DB)
+  - Optimizacion de carga de servicios publicos:
+    - cache en backend (Caffeine, TTL)
+    - invalidacion en mutaciones admin de servicios
+    - fallback inmediato en frontend desde cache local + revalidacion en background
 
 ## Modelo de dominio
 
@@ -214,6 +219,9 @@ PORT=8080
 
 Health check recomendado en Render: `/api/public/services`.
 
+Para uptime monitor externo (ej. UptimeRobot) usa:
+- `/api/health` (no toca Neon ni hace queries)
+
 ### 3) Frontend en Vercel o Netlify
 
 Variables frontend:
@@ -354,6 +362,7 @@ curl -X PATCH http://localhost:8080/api/admin/appointments/<APPOINTMENT_ID>/stat
 ## Notas
 
 - El frontend ya consume el backend Spring (no depende de Supabase para login/agenda/admin).
+- `GET /api/health` responde `200` con JSON simple (`{"status":"ok"}`) y no consulta base de datos.
 - Si cambias la URL/puerto del backend, actualiza `VITE_API_BASE_URL`.
 - El CTA de confirmacion por WhatsApp usa `VITE_WHATSAPP_BOOKING_PHONE` y requiere formato solo digitos (ej: `5491122334455`).
 - Auto-reply de WhatsApp (backend) solo responde si el numero entrante coincide con un cliente con turno `PENDING/CONFIRMED` creado recientemente (ventana `WHATSAPP_AUTOREPLY_LOOKBACK_MINUTES`) y respeta cooldown por telefono (`WHATSAPP_AUTOREPLY_COOLDOWN_MINUTES`) para evitar respuestas indeseadas/repetidas.

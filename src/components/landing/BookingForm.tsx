@@ -482,6 +482,8 @@ const BookingForm = () => {
             </Label>
             <Input
               id="name"
+              name="name"
+              autoComplete="name"
               placeholder="Tu nombre"
               value={name}
               onChange={(e) => {
@@ -503,6 +505,8 @@ const BookingForm = () => {
             </Label>
             <Input
               id="phone"
+              name="phone"
+              autoComplete="tel"
               placeholder="Tu número de teléfono"
               value={phone}
               onChange={(e) => {
@@ -519,8 +523,9 @@ const BookingForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-foreground/80">Servicio</Label>
+            <Label htmlFor="booking-service" className="text-foreground/80">Servicio</Label>
             <Select
+              name="serviceId"
               value={serviceId}
               onValueChange={(value) => {
                 setServiceId(value);
@@ -529,6 +534,8 @@ const BookingForm = () => {
               }}
             >
               <SelectTrigger
+                id="booking-service"
+                aria-label="Servicio"
                 className={`bg-secondary/50 border-border/50 ${fieldErrors.serviceId ? "border-destructive ring-destructive" : ""}`}
               >
                 <SelectValue placeholder="Elige un servicio" />
@@ -545,10 +552,12 @@ const BookingForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-foreground/80">Fecha</Label>
+            <Label htmlFor="booking-date" className="text-foreground/80">Fecha</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
+                  id="booking-date"
+                  aria-label="Fecha"
                   variant="outline"
                   className={`w-full justify-start text-left bg-secondary/50 border-border/50 hover:bg-secondary ${errorClass(Boolean(fieldErrors.date))}`}
                 >
@@ -574,8 +583,9 @@ const BookingForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-foreground/80">Horario</Label>
+            <Label htmlFor="booking-time" className="text-foreground/80">Horario</Label>
             <Select
+              name="time"
               value={time}
               disabled={!serviceId || !date || loadingOccupiedSlots}
               onValueChange={(value) => {
@@ -584,6 +594,8 @@ const BookingForm = () => {
               }}
             >
               <SelectTrigger
+                id="booking-time"
+                aria-label="Horario"
                 onClick={refreshOccupiedSlotsIfReady}
                 className={`bg-secondary/50 border-border/50 ${fieldErrors.time ? "border-destructive ring-destructive" : ""}`}
               >

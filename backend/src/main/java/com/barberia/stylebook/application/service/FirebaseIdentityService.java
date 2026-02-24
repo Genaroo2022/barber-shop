@@ -1,6 +1,8 @@
 package com.barberia.stylebook.application.service;
 
 import com.barberia.stylebook.application.exception.BusinessRuleException;
+import com.barberia.stylebook.domain.entity.AdminUser;
+import com.barberia.stylebook.repository.AdminUserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -10,11 +12,8 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class FirebaseIdentityService {
@@ -23,31 +22,24 @@ public class FirebaseIdentityService {
 
     private final RestClient restClient;
     private final String firebaseApiKey;
-    private final Set<String> allowedUids;
+    private final AdminUserRepository adminUserRepository;
 
     public FirebaseIdentityService(
             @Value("${app.firebase.api-key:}") String firebaseApiKey,
-            @Value("${app.firebase.allowed-uids:}") String allowedUidsRaw
+            AdminUserRepository adminUserRepository
     ) {
         this.restClient = RestClient.builder()
                 .baseUrl("https://identitytoolkit.googleapis.com")
                 .requestFactory(buildRequestFactory())
                 .build();
         this.firebaseApiKey = firebaseApiKey;
-        this.allowedUids = Arrays.stream(allowedUidsRaw.split(","))
-                .map(String::trim)
-                .filter(StringUtils::hasText)
-                .collect(Collectors.toSet());
+        this.adminUserRepository = adminUserRepository;
     }
 
     public FirebaseIdentity lookupByIdToken(String idToken) {
         if (!StringUtils.hasText(firebaseApiKey)) {
             throw new BusinessRuleException("Autenticacion Firebase no configurada");
         }
-        if (allowedUids.isEmpty()) {
-            throw new BusinessRuleException("Autenticacion Firebase no configurada: faltan UIDs permitidos");
-        }
-
         try {
             LookupResponse response = restClient.post()
                     .uri("/v1/accounts:lookup?key={key}", firebaseApiKey)
@@ -77,7 +69,11 @@ public class FirebaseIdentityService {
     }
 
     public boolean isUidAllowed(String uid) {
-        return allowedUids.contains(uid);
+        return adminUserRepository.findByFirebaseUid(uid)
+                .filter(user -> Boolean.TRUE.equals(user.getActive()))
+                .map(AdminUser::getRole)
+                .filter(role -> "ADMIN".equalsIgnoreCase(role))
+                .isPresent();
     }
 
     public record FirebaseIdentity(String uid, String email, String phoneNumber) {

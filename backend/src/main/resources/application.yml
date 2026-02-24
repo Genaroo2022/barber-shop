@@ -25,7 +25,6 @@ app:
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:28800}
   firebase:
     api-key: ${FIREBASE_API_KEY:}
-    allowed-uids: ${FIREBASE_ALLOWED_UIDS:}
   whatsapp:
     enabled: ${WHATSAPP_AUTOREPLY_ENABLED:false}
     webhook-verify-token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:}

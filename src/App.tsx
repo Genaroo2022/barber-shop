@@ -2,11 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Suspense, lazy, type ReactElement, useEffect } from "react";
+import { Suspense, lazy, type ReactElement, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { isAuthenticated } from "./lib/auth";
+import { loginWithFirebase } from "./lib/api";
+import { getAccessToken, setAccessToken } from "./lib/auth";
+import { AuthProvider, useAuth } from "./lib/auth-context";
 import { ADMIN_ROUTE, LOGIN_ROUTE } from "./lib/routes";
 
 const queryClient = new QueryClient();
@@ -26,18 +28,63 @@ const getNavbarOffset = (): number => {
   return Math.max(56, Math.ceil(navHeight + 4));
 };
 
-const RequireAuth = ({ children }: { children: ReactElement }) => {
-  if (!isAuthenticated()) {
-    return <Navigate to={LOGIN_ROUTE} replace />;
-  }
-  return children;
-};
-
 const RouteLoadingFallback = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
     <div className="h-7 w-7 rounded-full border-2 border-gold/30 border-t-gold animate-spin" aria-label="Cargando" />
   </div>
 );
+
+const RequireAuth = ({ children }: { children: ReactElement }) => {
+  const { user, isLoading } = useAuth();
+  const [status, setStatus] = useState<"checking" | "authenticated" | "unauthenticated">("checking");
+
+  useEffect(() => {
+    if (isLoading) {
+      setStatus("checking");
+      return;
+    }
+
+    let cancelled = false;
+
+    const ensureBackendSession = async () => {
+      if (getAccessToken()) {
+        if (!cancelled) setStatus("authenticated");
+        return;
+      }
+
+      if (!user) {
+        if (!cancelled) setStatus("unauthenticated");
+        return;
+      }
+
+      try {
+        const idToken = await user.getIdToken(true);
+        const response = await loginWithFirebase(idToken);
+        setAccessToken(response.accessToken);
+        if (!cancelled) setStatus("authenticated");
+      } catch {
+        if (!cancelled) setStatus("unauthenticated");
+      }
+    };
+
+    void ensureBackendSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, user]);
+
+  if (isLoading) {
+    return <p>Cargando sesión...</p>;
+  }
+  if (status === "checking") {
+    return <p>Cargando sesión...</p>;
+  }
+  if (status === "unauthenticated") {
+    return <Navigate to={LOGIN_ROUTE} replace />;
+  }
+  return children;
+};
 
 const App = () => {
   useEffect(() => {
@@ -94,37 +141,39 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route
-              path={LOGIN_ROUTE}
-              element={
-                <Suspense fallback={<RouteLoadingFallback />}>
-                  <Login />
-                </Suspense>
-              }
-            />
-            <Route
-              path={ADMIN_ROUTE}
-              element={
-                <RequireAuth>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route
+                path={LOGIN_ROUTE}
+                element={
                   <Suspense fallback={<RouteLoadingFallback />}>
-                    <Admin />
+                    <Login />
                   </Suspense>
-                </RequireAuth>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+                }
+              />
+              <Route
+                path={ADMIN_ROUTE}
+                element={
+                  <RequireAuth>
+                    <Suspense fallback={<RouteLoadingFallback />}>
+                      <Admin />
+                    </Suspense>
+                  </RequireAuth>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

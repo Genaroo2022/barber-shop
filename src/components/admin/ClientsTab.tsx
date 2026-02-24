@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { ArrowRightLeft, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -80,10 +80,10 @@ const ClientsTab = () => {
     if (!editingClient) return;
     const errors: ClientFormErrors = {};
     if (!form.name.trim()) errors.name = "Completa el nombre";
-    if (!form.phone.trim()) errors.phone = "Completa el teléfono";
+    if (!form.phone.trim()) errors.phone = "Completa el telÃ©fono";
     if (errors.name || errors.phone) {
       setFormErrors(errors);
-      toast.error("Completa nombre y teléfono");
+      toast.error("Completa nombre y telÃ©fono");
       return;
     }
 
@@ -170,9 +170,9 @@ const ClientsTab = () => {
         <TableHeader>
           <TableRow className="border-border hover:bg-transparent">
             <TableHead className="text-muted-foreground">Nombre</TableHead>
-            <TableHead className="text-muted-foreground">Teléfono</TableHead>
+            <TableHead className="text-muted-foreground">TelÃ©fono</TableHead>
             <TableHead className="text-muted-foreground">Turnos totales</TableHead>
-            <TableHead className="text-muted-foreground">Última visita</TableHead>
+            <TableHead className="text-muted-foreground">Ãšltima visita</TableHead>
             <TableHead className="text-muted-foreground">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -226,10 +226,12 @@ const ClientsTab = () => {
         <AlertDialogContent className="glass-card border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>Editar cliente</AlertDialogTitle>
-            <AlertDialogDescription>Actualiza nombre y teléfono del cliente.</AlertDialogDescription>
+            <AlertDialogDescription>Actualiza nombre y telÃ©fono del cliente.</AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
             <Input
+              aria-label="Nombre del cliente"
+              autoComplete="name"
               placeholder="Nombre"
               value={form.name}
               onChange={(e) => {
@@ -240,6 +242,8 @@ const ClientsTab = () => {
             />
             {formErrors.name && <p className="text-xs text-destructive">{formErrors.name}</p>}
             <Input
+              aria-label="Telefono del cliente"
+              autoComplete="tel"
               placeholder="Teléfono"
               value={form.phone}
               onChange={(e) => {
@@ -270,7 +274,7 @@ const ClientsTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar cliente</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el cliente
+              Esta acciÃ³n eliminarÃ¡ el cliente
               {deleteTarget ? ` "${deleteTarget.clientName}"` : ""}
               {" "}y sus turnos asociados.
             </AlertDialogDescription>
@@ -307,8 +311,11 @@ const ClientsTab = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
-            <label className="text-xs text-muted-foreground">Cliente origen (se elimina)</label>
+            <label htmlFor="merge-source-client" className="text-xs text-muted-foreground">Cliente origen (se elimina)</label>
             <select
+              id="merge-source-client"
+              name="merge-source-client"
+              aria-label="Cliente origen"
               value={mergeSourceId}
               onChange={(e) => {
                 setMergeSourceId(e.target.value);
@@ -325,8 +332,11 @@ const ClientsTab = () => {
             </select>
             {mergeErrors.sourceClientId && <p className="text-xs text-destructive">{mergeErrors.sourceClientId}</p>}
 
-            <label className="text-xs text-muted-foreground">Cliente destino (se conserva)</label>
+            <label htmlFor="merge-target-client" className="text-xs text-muted-foreground">Cliente destino (se conserva)</label>
             <select
+              id="merge-target-client"
+              name="merge-target-client"
+              aria-label="Cliente destino"
               value={mergeTargetId}
               onChange={(e) => {
                 setMergeTargetId(e.target.value);
@@ -362,3 +372,5 @@ const ClientsTab = () => {
 };
 
 export default ClientsTab;
+
+

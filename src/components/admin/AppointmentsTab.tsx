@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { BellRing, Check, ChevronLeft, ChevronRight, Download, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -229,7 +229,7 @@ const AppointmentsTab = () => {
     if (!editingAppointment) return;
     const errors: EditFormErrors = {};
     if (!editForm.clientName.trim()) errors.clientName = "Completa el nombre";
-    if (!editForm.clientPhone.trim()) errors.clientPhone = "Completa el teléfono";
+    if (!editForm.clientPhone.trim()) errors.clientPhone = "Completa el telÃ©fono";
     if (!editForm.serviceId) errors.serviceId = "Selecciona servicio";
     if (!editForm.appointmentAt) errors.appointmentAt = "Completa fecha y hora";
     if (!editForm.status) errors.status = "Selecciona estado";
@@ -283,7 +283,7 @@ const AppointmentsTab = () => {
     }
 
     const csv = buildCsv(
-      ["Cliente", "Teléfono", "Servicio", "Fecha", "Hora", "Estado", "Notas"],
+      ["Cliente", "TelÃ©fono", "Servicio", "Fecha", "Hora", "Estado", "Notas"],
       filteredAppointments.map((apt) => {
         const date = new Date(apt.appointmentAt);
         return [
@@ -308,7 +308,7 @@ const AppointmentsTab = () => {
   const fetchStalePendingAppointments = async (options?: { silent?: boolean }) => {
     if (!thresholdIsValid) {
       if (!options?.silent) {
-        toast.error("El umbral debe ser un número mayor o igual a 1");
+        toast.error("El umbral debe ser un nÃºmero mayor o igual a 1");
       }
       return;
     }
@@ -323,7 +323,7 @@ const AppointmentsTab = () => {
         } else {
           toast.warning(
             stale.length === 1
-              ? "Se detectó 1 turno pendiente sin confirmar"
+              ? "Se detectÃ³ 1 turno pendiente sin confirmar"
               : `Se detectaron ${stale.length} turnos pendientes sin confirmar`
           );
         }
@@ -404,6 +404,7 @@ const AppointmentsTab = () => {
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <Input
+              aria-label="Mes a consultar"
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
@@ -434,7 +435,7 @@ const AppointmentsTab = () => {
           }}
         >
           <BellRing className="w-4 h-4 mr-2" />
-          Asistente de Gestión
+          Asistente de GestiÃ³n
         </Button>
         <Button variant="outline" size="sm" onClick={exportAppointmentsCsv}>
           <Download className="w-4 h-4 mr-2" />
@@ -567,6 +568,8 @@ const AppointmentsTab = () => {
           </AlertDialogHeader>
           <div className="space-y-2">
             <Input
+              aria-label="Nombre del cliente"
+              autoComplete="name"
               placeholder="Nombre del cliente"
               value={editForm.clientName}
               onChange={(e) => {
@@ -577,6 +580,8 @@ const AppointmentsTab = () => {
             />
             {editErrors.clientName && <p className="text-xs text-destructive">{editErrors.clientName}</p>}
             <Input
+              aria-label="Telefono del cliente"
+              autoComplete="tel"
               placeholder="Teléfono"
               value={editForm.clientPhone}
               onChange={(e) => {
@@ -587,6 +592,8 @@ const AppointmentsTab = () => {
             />
             {editErrors.clientPhone && <p className="text-xs text-destructive">{editErrors.clientPhone}</p>}
             <select
+              aria-label="Servicio"
+              name="appointment-service"
               value={editForm.serviceId}
               onChange={(e) => {
                 setEditForm((prev) => ({ ...prev, serviceId: e.target.value }));
@@ -603,6 +610,7 @@ const AppointmentsTab = () => {
             </select>
             {editErrors.serviceId && <p className="text-xs text-destructive">{editErrors.serviceId}</p>}
             <Input
+              aria-label="Fecha y hora del turno"
               type="datetime-local"
               value={editForm.appointmentAt}
               onChange={(e) => {
@@ -613,6 +621,8 @@ const AppointmentsTab = () => {
             />
             {editErrors.appointmentAt && <p className="text-xs text-destructive">{editErrors.appointmentAt}</p>}
             <select
+              aria-label="Estado del turno"
+              name="appointment-status"
               value={editForm.status}
               onChange={(e) => {
                 setEditForm((prev) => ({ ...prev, status: e.target.value as AppointmentItem["status"] }));
@@ -627,6 +637,7 @@ const AppointmentsTab = () => {
             </select>
             {editErrors.status && <p className="text-xs text-destructive">{editErrors.status}</p>}
             <Input
+              aria-label="Notas del turno"
               placeholder="Notas (opcional)"
               value={editForm.notes}
               onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))}
@@ -650,9 +661,9 @@ const AppointmentsTab = () => {
       <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
         <DialogContent className="glass-card border-border max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Asistente de Gestión de Turnos</DialogTitle>
+            <DialogTitle>Asistente de GestiÃ³n de Turnos</DialogTitle>
             <DialogDescription>
-              Detecta turnos en estado pendiente sin confirmar por más tiempo del esperado.
+              Detecta turnos en estado pendiente sin confirmar por mÃ¡s tiempo del esperado.
             </DialogDescription>
           </DialogHeader>
 
@@ -660,6 +671,7 @@ const AppointmentsTab = () => {
             <div className="grid md:grid-cols-[220px_1fr_auto] gap-2 items-center">
               <p className="text-sm text-muted-foreground">Umbral en minutos</p>
               <Input
+                aria-label="Umbral en minutos"
                 type="number"
                 min={1}
                 step={1}
@@ -764,7 +776,7 @@ const AppointmentsTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar turno</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el turno
+              Esta acciÃ³n eliminarÃ¡ el turno
               {deleteTarget ? ` de "${deleteTarget.clientName}"` : ""}.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -785,3 +797,8 @@ const AppointmentsTab = () => {
 };
 
 export default AppointmentsTab;
+
+
+
+
+

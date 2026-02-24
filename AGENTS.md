@@ -186,8 +186,9 @@ npm run build
   - Public booking anti-abuse: `BookingRateLimiter` by client IP
   - Admin appointments tab: periodic polling + toast when new appointments arrive
   - Rate-limit tests for booking/login
-  - Admin auth migrated to Firebase (Google + phone/SMS OTP with invisible reCAPTCHA)
-  - Backend pre-registration gate for Firebase login via `FIREBASE_ALLOWED_UIDS`
+  - Admin auth migrated to Firebase (Google popup)
+  - Backend pre-registration gate for Firebase login via `admin_users.firebase_uid` (no whitelist por variable de entorno)
+  - Admin logout now clears both backend JWT and Firebase session (avoids automatic re-login after logout)
   - Frontend private route aliases for admin/login via `VITE_ADMIN_PATH` and `VITE_LOGIN_PATH`
   - Landing anchor navigation tuned: smoother scroll + corrected section anchor targets
   - Booking success UX: user-initiated WhatsApp CTA + countdown redirect
@@ -196,7 +197,7 @@ npm run build
   - Client deduplication by normalized phone (`phone_normalized`) + migration V5 + merge endpoint/UI
 - Backend migrations must run automatically at startup.
   - Current implementation uses `backend/src/main/java/com/barberia/stylebook/config/SchemaMigrationConfig.java`.
-  - Keep migration scripts in `backend/src/main/resources/db/migration` (`V1`..`V5` currently).
+  - Keep migration scripts in `backend/src/main/resources/db/migration` (`V1`..`V7` currently).
 
 ## UI Parity Rule
 

@@ -42,7 +42,7 @@ docker compose down
 ## Estado actual importante
 
 - El backend ejecuta migraciones automaticamente al iniciar (Flyway via `SchemaMigrationConfig`).
-- Si la DB local esta vacia, se aplican `V1..V5` al levantar backend.
+- Si la DB local esta vacia, se aplican `V1..V7` al levantar backend.
 - Capacidades relevantes:
   - CRUD de servicios en admin
   - Gestion de galeria en admin y consumo publico (incluye carga multiple y borrado masivo en admin)
@@ -104,7 +104,6 @@ $env:APP_SECURITY_BOOKING_MAX_REQUESTS_PER_HOUR="<int>"
 $env:APP_SECURITY_JWT_ADMIN_CACHE_TTL_SECONDS="<int>"
 $env:APP_SECURITY_TRUSTED_PROXY_CIDRS="<cidr_1,cidr_2,...>"
 $env:FIREBASE_API_KEY="<firebase-web-api-key>"
-$env:FIREBASE_ALLOWED_UIDS="<uid_1,uid_2,...>"
 $env:CLOUDINARY_CLOUD_NAME="<cloud-name>"
 $env:CLOUDINARY_API_KEY="<cloudinary-api-key>"
 $env:CLOUDINARY_API_SECRET="<cloudinary-api-secret>"
@@ -215,7 +214,6 @@ DB_PASSWORD=<neon-password>
 JWT_SECRET_BASE64=<secret-base64-256-bit-o-mas>
 CORS_ALLOWED_ORIGINS=https://<tu-frontend>.vercel.app,https://<tu-frontend>.netlify.app
 FIREBASE_API_KEY=<firebase-web-api-key>
-FIREBASE_ALLOWED_UIDS=<uid_admin_1,uid_admin_2>
 CLOUDINARY_CLOUD_NAME=<tu-cloud-name>
 CLOUDINARY_API_KEY=<tu-cloudinary-api-key>
 CLOUDINARY_API_SECRET=<tu-cloudinary-api-secret>
@@ -389,10 +387,11 @@ curl -X PATCH http://localhost:8080/api/admin/appointments/<APPOINTMENT_ID>/stat
 - Los botones `Descargar` de `Turnos` e `Ingresos` exportan solo el mes seleccionado.
 - En Admin > Turnos, hay refresco automatico periodico y toast de nuevos turnos.
 - En booking publico, un horario reservado desaparece inmediatamente y tambien se recalcula automaticamente desde backend.
-- Login admin migrado a Firebase Authentication (Google + SMS OTP) con reCAPTCHA invisible.
+- Login admin migrado a Firebase Authentication (Google popup).
 - El JWT de admin en frontend se guarda en `sessionStorage` (no persiste entre cierres de navegador).
+- Al cerrar sesion en Admin se limpia JWT y tambien se cierra sesion Firebase (evita reingreso automatico al volver a `/acceso-admin-9x7p`).
 - El input OTP usa `autoComplete=\"one-time-code\"` para autocompletado nativo en iOS.
-- Acceso admin Firebase restringido por UIDs permitidos (`FIREBASE_ALLOWED_UIDS`); usuarios no listados reciben `Usuario no encontrado`.
+- Acceso admin Firebase restringido por UID cargado en `admin_users.firebase_uid`; usuarios no registrados reciben `Usuario no encontrado`.
 - Rutas frontend de acceso admin/login parametrizadas (`VITE_ADMIN_PATH`, `VITE_LOGIN_PATH`) para evitar rutas publicas obvias.
 - Navegacion anchor ajustada con scroll suave y anclaje al encabezado real de cada seccion para evitar huecos visuales.
 

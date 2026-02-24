@@ -20,6 +20,9 @@ public class AdminUser extends AuditableEntity {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Column(name = "firebase_uid", unique = true, length = 128)
+    private String firebaseUid;
+
     public String getEmail() {
         return email;
     }
@@ -50,5 +53,13 @@ public class AdminUser extends AuditableEntity {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public String getFirebaseUid() {
+        return firebaseUid;
+    }
+
+    public void setFirebaseUid(String firebaseUid) {
+        this.firebaseUid = firebaseUid;
     }
 }

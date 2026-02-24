@@ -78,7 +78,7 @@ public class AuthService {
 
         if (!firebaseIdentityService.isUidAllowed(identity.uid())) {
             loginRateLimiter.recordFailure(clientIp, limiterKey);
-            throw new BusinessRuleException("Usuario no encontrado");
+            throw new BusinessRuleException("Usuario no encontrado. UID: " + identity.uid());
         }
 
         loginRateLimiter.recordSuccess(clientIp, limiterKey);

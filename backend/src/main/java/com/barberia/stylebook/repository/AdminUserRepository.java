@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface AdminUserRepository extends JpaRepository<AdminUser, UUID> {
     Optional<AdminUser> findByEmailIgnoreCase(String email);
+    Optional<AdminUser> findByFirebaseUid(String firebaseUid);
 }

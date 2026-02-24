@@ -282,7 +282,15 @@ const IncomeTab = () => {
       <div className="glass-card rounded-xl p-4 md:p-5">
         <div className="grid md:grid-cols-[200px_1fr_auto] gap-3 items-center">
           <p className="text-sm text-muted-foreground">Mes a consultar</p>
-          <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+          <Input
+            id="income-month"
+            name="income-month"
+            aria-label="Mes a consultar"
+            type="month"
+            autoComplete="off"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          />
           <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={exportIncomeCsv}>
             <Download className="w-4 h-4 mr-2" />
             Descargar
@@ -356,6 +364,7 @@ const IncomeTab = () => {
           </div>
           <div className="space-y-1">
             <Input
+              aria-label="Fecha del ingreso manual"
               type="date"
               value={manualForm.occurredOn}
               onChange={(e) => {

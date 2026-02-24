@@ -81,7 +81,15 @@ const StatsTab = () => {
       <div className="glass-card rounded-xl p-4 md:p-5">
         <div className="grid md:grid-cols-[200px_1fr] gap-3 items-center">
           <p className="text-sm text-muted-foreground">Mes a consultar</p>
-          <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+          <Input
+            id="stats-month"
+            name="stats-month"
+            aria-label="Mes a consultar"
+            type="month"
+            autoComplete="off"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          />
         </div>
       </div>
 

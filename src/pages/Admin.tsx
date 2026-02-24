@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Scissors, CalendarDays, Users, BarChart3, DollarSign, LogOut, Menu, X, Images, Tag } from "lucide-react";
+import { signOut } from "firebase/auth";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import AppointmentsTab from "@/components/admin/AppointmentsTab";
 import ClientsTab from "@/components/admin/ClientsTab";
@@ -9,6 +11,7 @@ import IncomeTab from "@/components/admin/IncomeTab";
 import ServicesTab from "@/components/admin/ServicesTab";
 import GalleryTab from "@/components/admin/GalleryTab";
 import { clearAccessToken } from "@/lib/auth";
+import { getFirebaseAuth } from "@/lib/firebase";
 
 const tabs = [
   { id: "appointments", label: "Turnos", icon: CalendarDays },
@@ -24,8 +27,14 @@ const Admin = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     clearAccessToken();
+    try {
+      await signOut(getFirebaseAuth());
+    } catch {
+      toast.error("No se pudo cerrar la sesion de Firebase");
+      return;
+    }
     navigate("/");
   };
 
@@ -72,7 +81,9 @@ const Admin = () => {
           <Button
             variant="ghost"
             className="w-full justify-start text-muted-foreground hover:text-destructive"
-            onClick={handleLogout}
+            onClick={() => {
+              void handleLogout();
+            }}
           >
             <LogOut className="w-4 h-4 mr-2" /> Cerrar sesión
           </Button>

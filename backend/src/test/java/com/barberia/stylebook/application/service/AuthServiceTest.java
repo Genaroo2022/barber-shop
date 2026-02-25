@@ -1,6 +1,7 @@
 package com.barberia.stylebook.application.service;
 
 import com.barberia.stylebook.application.exception.BusinessRuleException;
+import com.barberia.stylebook.domain.entity.AdminUser;
 import com.barberia.stylebook.repository.AdminUserRepository;
 import com.barberia.stylebook.security.JwtService;
 import com.barberia.stylebook.security.LoginRateLimiter;
@@ -12,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -57,15 +60,22 @@ class AuthServiceTest {
         String ip = "198.51.100.30";
         FirebaseIdentityService.FirebaseIdentity identity =
                 new FirebaseIdentityService.FirebaseIdentity("uid-1", "admin@example.com", null);
+        AdminUser adminUser = new AdminUser();
+        adminUser.setActive(true);
+        adminUser.setRole("ADMIN");
+        adminUser.setEmail("old@example.com");
+        adminUser.setFirebaseUid("uid-1");
+
         when(firebaseIdentityService.lookupByIdToken("good-token")).thenReturn(identity);
-        when(firebaseIdentityService.isUidAllowed("uid-1")).thenReturn(true);
+        when(adminUserRepository.findByFirebaseUid("uid-1")).thenReturn(Optional.of(adminUser));
         when(jwtService.getExpirationSeconds()).thenReturn(3600L);
-        when(jwtService.generateToken(eq("admin@example.com"), anyMap())).thenReturn("jwt-token");
+        when(jwtService.generateToken(eq("uid-1"), anyMap())).thenReturn("jwt-token");
 
         LoginResponse response = authService.loginWithFirebase("good-token", ip);
 
         assertEquals("jwt-token", response.accessToken());
         assertEquals(3600L, response.expiresInSeconds());
         verify(loginRateLimiter).recordSuccess(ip, "firebase:preauth");
+        verify(adminUserRepository).save(adminUser);
     }
 }

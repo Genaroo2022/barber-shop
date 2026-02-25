@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 @Table(name = "admin_users")
 public class AdminUser extends AuditableEntity {
 
-    @Column(nullable = false, unique = true, length = 120)
+    @Column(length = 120)
     private String email;
 
     @Column(name = "password_hash", nullable = false, length = 120)

@@ -6,6 +6,7 @@ import com.barberia.stylebook.repository.AdminUserRepository;
 import com.barberia.stylebook.security.JwtService;
 import com.barberia.stylebook.security.LoginRateLimiter;
 import com.barberia.stylebook.web.dto.LoginResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,7 +58,7 @@ public class AuthService {
         return new LoginResponse(token, "Bearer", expiresIn);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse loginWithFirebase(String idToken, String clientIp) {
         loginRateLimiter.checkAllowed(clientIp, FIREBASE_PREAUTH_LIMITER_KEY);
 
@@ -69,26 +70,42 @@ public class AuthService {
             throw ex;
         }
 
-        String limiterKey = StringUtils.hasText(identity.email())
-                ? identity.email().trim().toLowerCase()
-                : StringUtils.hasText(identity.phoneNumber())
-                        ? identity.phoneNumber().trim()
-                        : "uid:" + identity.uid();
+        String limiterKey = "uid:" + identity.uid();
         loginRateLimiter.checkAllowed(clientIp, limiterKey);
 
-        if (!firebaseIdentityService.isUidAllowed(identity.uid())) {
+        AdminUser user = adminUserRepository.findByFirebaseUid(identity.uid())
+                .filter(found -> Boolean.TRUE.equals(found.getActive()))
+                .filter(found -> "ADMIN".equalsIgnoreCase(found.getRole()))
+                .orElse(null);
+
+        if (user == null) {
             loginRateLimiter.recordFailure(clientIp, limiterKey);
             throw new BusinessRuleException("Usuario no encontrado. UID: " + identity.uid());
+        }
+
+        String providerEmail = normalizeProviderEmail(identity.email());
+        if (providerEmail != null && !providerEmail.equalsIgnoreCase(user.getEmail())) {
+            try {
+                user.setEmail(providerEmail);
+                adminUserRepository.save(user);
+            } catch (DataIntegrityViolationException ex) {
+                loginRateLimiter.recordFailure(clientIp, limiterKey);
+                throw new BusinessRuleException("No se pudo sincronizar el email del proveedor");
+            }
         }
 
         loginRateLimiter.recordSuccess(clientIp, limiterKey);
         loginRateLimiter.recordSuccess(clientIp, FIREBASE_PREAUTH_LIMITER_KEY);
 
-        String subject = StringUtils.hasText(identity.email())
-                ? identity.email().trim().toLowerCase()
-                : "firebase:" + identity.uid();
         long expiresIn = jwtService.getExpirationSeconds();
-        String token = jwtService.generateToken(subject, Map.of("role", "ADMIN", "firebaseUid", identity.uid()));
+        String token = jwtService.generateToken(identity.uid(), Map.of("role", "ADMIN", "firebaseUid", identity.uid()));
         return new LoginResponse(token, "Bearer", expiresIn);
+    }
+
+    private String normalizeProviderEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            return null;
+        }
+        return email.trim().toLowerCase();
     }
 }

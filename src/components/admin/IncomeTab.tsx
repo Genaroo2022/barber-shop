@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { DollarSign, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -333,7 +333,9 @@ const IncomeTab = () => {
         <h3 className="font-display font-semibold">Cargar ingreso manual</h3>
         <div className="grid md:grid-cols-3 gap-3">
           <div className="space-y-1">
+            <label htmlFor="manual-income-amount" className="text-xs text-muted-foreground">Monto del corte</label>
             <Input
+              id="manual-income-amount"
               type="number"
               min="0"
               step="0.01"
@@ -348,7 +350,9 @@ const IncomeTab = () => {
             {manualErrors.amount && <p className="text-xs text-destructive">{manualErrors.amount}</p>}
           </div>
           <div className="space-y-1">
+            <label htmlFor="manual-income-tip" className="text-xs text-muted-foreground">Propina</label>
             <Input
+              id="manual-income-tip"
               type="number"
               min="0"
               step="0.01"
@@ -363,7 +367,9 @@ const IncomeTab = () => {
             {manualErrors.tipAmount && <p className="text-xs text-destructive">{manualErrors.tipAmount}</p>}
           </div>
           <div className="space-y-1">
+            <label htmlFor="manual-income-date" className="text-xs text-muted-foreground">Fecha</label>
             <Input
+              id="manual-income-date"
               aria-label="Fecha del ingreso manual"
               type="date"
               value={manualForm.occurredOn}
@@ -376,11 +382,15 @@ const IncomeTab = () => {
             {manualErrors.occurredOn && <p className="text-xs text-destructive">{manualErrors.occurredOn}</p>}
           </div>
         </div>
-        <Textarea
-          placeholder="Ej: Corte premium + lavado (opcional)"
-          value={manualForm.notes}
-          onChange={(e) => setManualForm((prev) => ({ ...prev, notes: e.target.value }))}
-        />
+        <div className="space-y-1">
+          <label htmlFor="manual-income-notes" className="text-xs text-muted-foreground">Notas</label>
+          <Textarea
+            id="manual-income-notes"
+            placeholder="Ej: Corte premium + lavado (opcional)"
+            value={manualForm.notes}
+            onChange={(e) => setManualForm((prev) => ({ ...prev, notes: e.target.value }))}
+          />
+        </div>
         <Button onClick={handleAddManualIncome} disabled={savingManualIncome}>
           {savingManualIncome ? "Guardando..." : "Agregar ingreso"}
         </Button>
@@ -451,7 +461,9 @@ const IncomeTab = () => {
           </DialogHeader>
           <div className="grid gap-3">
             <div className="space-y-1">
+              <label htmlFor="edit-manual-income-amount" className="text-xs text-muted-foreground">Monto del corte</label>
               <Input
+                id="edit-manual-income-amount"
                 type="number"
                 min="0"
                 step="0.01"
@@ -466,7 +478,9 @@ const IncomeTab = () => {
               {editingErrors.amount && <p className="text-xs text-destructive">{editingErrors.amount}</p>}
             </div>
             <div className="space-y-1">
+              <label htmlFor="edit-manual-income-tip" className="text-xs text-muted-foreground">Propina</label>
               <Input
+                id="edit-manual-income-tip"
                 type="number"
                 min="0"
                 step="0.01"
@@ -481,7 +495,9 @@ const IncomeTab = () => {
               {editingErrors.tipAmount && <p className="text-xs text-destructive">{editingErrors.tipAmount}</p>}
             </div>
             <div className="space-y-1">
+              <label htmlFor="edit-manual-income-date" className="text-xs text-muted-foreground">Fecha</label>
               <Input
+                id="edit-manual-income-date"
                 type="date"
                 value={editingForm.occurredOn}
                 onChange={(e) => {
@@ -492,11 +508,15 @@ const IncomeTab = () => {
               />
               {editingErrors.occurredOn && <p className="text-xs text-destructive">{editingErrors.occurredOn}</p>}
             </div>
-            <Textarea
-              placeholder="Ej: Corte premium + lavado (opcional)"
-              value={editingForm.notes}
-              onChange={(e) => setEditingForm((prev) => ({ ...prev, notes: e.target.value }))}
-            />
+            <div className="space-y-1">
+              <label htmlFor="edit-manual-income-notes" className="text-xs text-muted-foreground">Notas</label>
+              <Textarea
+                id="edit-manual-income-notes"
+                placeholder="Ej: Corte premium + lavado (opcional)"
+                value={editingForm.notes}
+                onChange={(e) => setEditingForm((prev) => ({ ...prev, notes: e.target.value }))}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setEditingEntry(null)} disabled={updatingManualIncome}>
@@ -514,7 +534,7 @@ const IncomeTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar ingreso manual</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el ingreso de {deleteTarget?.occurredOn}.
+              Esta acciÃ³n eliminarÃ¡ el ingreso de {deleteTarget?.occurredOn}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -534,3 +554,4 @@ const IncomeTab = () => {
 };
 
 export default IncomeTab;
+

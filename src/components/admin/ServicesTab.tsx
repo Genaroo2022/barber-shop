@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,7 +191,9 @@ const ServicesTab = () => {
         <h3 className="font-display text-lg font-semibold">Nuevo servicio</h3>
         <div className="grid md:grid-cols-4 gap-3">
           <div className="space-y-1">
+            <label htmlFor="new-service-name" className="text-xs text-muted-foreground">Nombre del servicio</label>
             <Input
+              id="new-service-name"
               placeholder="Ej: Corte clásico"
               value={newService.name}
               onChange={(e) => {
@@ -203,7 +205,9 @@ const ServicesTab = () => {
             {newServiceErrors.name && <p className="text-xs text-destructive">{newServiceErrors.name}</p>}
           </div>
           <div className="space-y-1">
+            <label htmlFor="new-service-price" className="text-xs text-muted-foreground">Precio</label>
             <Input
+              id="new-service-price"
               placeholder="Ej: 12000"
               type="number"
               min="0"
@@ -217,7 +221,9 @@ const ServicesTab = () => {
             {newServiceErrors.price && <p className="text-xs text-destructive">{newServiceErrors.price}</p>}
           </div>
           <div className="space-y-1">
+            <label htmlFor="new-service-duration" className="text-xs text-muted-foreground">Duración (min)</label>
             <Input
+              id="new-service-duration"
               placeholder="Ej: 45 (min)"
               type="number"
               min="1"
@@ -233,7 +239,9 @@ const ServicesTab = () => {
             )}
           </div>
           <div className="md:col-span-4">
+            <label htmlFor="new-service-description" className="text-xs text-muted-foreground">Descripción</label>
             <Input
+              id="new-service-description"
               placeholder="Ej: Fade + barba (opcional)"
               value={newService.description}
               onChange={(e) => setNewService((prev) => ({ ...prev, description: e.target.value }))}
@@ -266,7 +274,9 @@ const ServicesTab = () => {
               <div key={service.id} className="border border-border/60 rounded-lg p-4 space-y-3">
                 <div className="grid md:grid-cols-4 gap-3">
                   <div className="space-y-1">
+                    <label htmlFor={`service-name-${service.id}`} className="text-xs text-muted-foreground">Nombre del servicio</label>
                     <Input
+                      id={`service-name-${service.id}`}
                       disabled={!isEditing}
                       value={isEditing ? editingForm.name : service.name}
                       onChange={(e) => {
@@ -278,7 +288,9 @@ const ServicesTab = () => {
                     {isEditing && editingErrors.name && <p className="text-xs text-destructive">{editingErrors.name}</p>}
                   </div>
                   <div className="space-y-1">
+                    <label htmlFor={`service-price-${service.id}`} className="text-xs text-muted-foreground">Precio</label>
                     <Input
+                      id={`service-price-${service.id}`}
                       disabled={!isEditing}
                       type="number"
                       min="0"
@@ -294,7 +306,9 @@ const ServicesTab = () => {
                     )}
                   </div>
                   <div className="space-y-1">
+                    <label htmlFor={`service-duration-${service.id}`} className="text-xs text-muted-foreground">Duración (min)</label>
                     <Input
+                      id={`service-duration-${service.id}`}
                       disabled={!isEditing}
                       type="number"
                       min="1"
@@ -310,7 +324,9 @@ const ServicesTab = () => {
                     )}
                   </div>
                   <div className="md:col-span-4">
+                    <label htmlFor={`service-description-${service.id}`} className="text-xs text-muted-foreground">Descripción</label>
                     <Input
+                      id={`service-description-${service.id}`}
                       disabled={!isEditing}
                       placeholder="Ej: Fade + barba (opcional)"
                       value={isEditing ? editingForm.description : service.description ?? ""}
@@ -366,7 +382,7 @@ const ServicesTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar servicio</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el servicio
+              Esta acciÃ³n eliminarÃ¡ el servicio
               {deleteTarget ? ` "${deleteTarget.name}"` : ""}.
             </AlertDialogDescription>
           </AlertDialogHeader>

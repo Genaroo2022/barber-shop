@@ -653,7 +653,9 @@ const AppointmentsTab = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
+            <label htmlFor="edit-appointment-client-name" className="text-xs text-muted-foreground">Nombre del cliente</label>
             <Input
+              id="edit-appointment-client-name"
               aria-label="Nombre del cliente"
               autoComplete="name"
               placeholder="Nombre del cliente"
@@ -665,7 +667,9 @@ const AppointmentsTab = () => {
               className={errorClass(Boolean(editErrors.clientName))}
             />
             {editErrors.clientName && <p className="text-xs text-destructive">{editErrors.clientName}</p>}
+            <label htmlFor="edit-appointment-client-phone" className="text-xs text-muted-foreground">Teléfono</label>
             <Input
+              id="edit-appointment-client-phone"
               aria-label="Telefono del cliente"
               autoComplete="tel"
               placeholder="Teléfono"
@@ -677,7 +681,9 @@ const AppointmentsTab = () => {
               className={errorClass(Boolean(editErrors.clientPhone))}
             />
             {editErrors.clientPhone && <p className="text-xs text-destructive">{editErrors.clientPhone}</p>}
+            <label htmlFor="edit-appointment-service" className="text-xs text-muted-foreground">Servicio</label>
             <select
+              id="edit-appointment-service"
               aria-label="Servicio"
               name="appointment-service"
               value={editForm.serviceId}
@@ -695,7 +701,9 @@ const AppointmentsTab = () => {
               ))}
             </select>
             {editErrors.serviceId && <p className="text-xs text-destructive">{editErrors.serviceId}</p>}
+            <label htmlFor="edit-appointment-datetime" className="text-xs text-muted-foreground">Fecha y hora</label>
             <Input
+              id="edit-appointment-datetime"
               aria-label="Fecha y hora del turno"
               type="datetime-local"
               value={editForm.appointmentAt}
@@ -706,7 +714,9 @@ const AppointmentsTab = () => {
               className={errorClass(Boolean(editErrors.appointmentAt))}
             />
             {editErrors.appointmentAt && <p className="text-xs text-destructive">{editErrors.appointmentAt}</p>}
+            <label htmlFor="edit-appointment-status" className="text-xs text-muted-foreground">Estado</label>
             <select
+              id="edit-appointment-status"
               aria-label="Estado del turno"
               name="appointment-status"
               value={editForm.status}
@@ -722,7 +732,9 @@ const AppointmentsTab = () => {
               <option value="CANCELLED">Cancelado</option>
             </select>
             {editErrors.status && <p className="text-xs text-destructive">{editErrors.status}</p>}
+            <label htmlFor="edit-appointment-notes" className="text-xs text-muted-foreground">Notas</label>
             <Input
+              id="edit-appointment-notes"
               aria-label="Notas del turno"
               placeholder="Notas (opcional)"
               value={editForm.notes}
@@ -755,8 +767,9 @@ const AppointmentsTab = () => {
 
           <div className="space-y-3">
             <div className="grid md:grid-cols-[220px_1fr_auto] gap-2 items-center">
-              <p className="text-sm text-muted-foreground">Umbral en minutos</p>
+              <label htmlFor="stale-threshold-minutes" className="text-sm text-muted-foreground">Umbral en minutos</label>
               <Input
+                id="stale-threshold-minutes"
                 aria-label="Umbral en minutos"
                 type="number"
                 min={1}

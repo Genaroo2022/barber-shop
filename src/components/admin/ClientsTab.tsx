@@ -266,7 +266,9 @@ const ClientsTab = () => {
             <AlertDialogDescription>Actualiza nombre y teléfono del cliente.</AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
+            <label htmlFor="edit-client-name" className="text-xs text-muted-foreground">Nombre del cliente</label>
             <Input
+              id="edit-client-name"
               aria-label="Nombre del cliente"
               autoComplete="name"
               placeholder="Nombre"
@@ -278,7 +280,9 @@ const ClientsTab = () => {
               className={errorClass(Boolean(formErrors.name))}
             />
             {formErrors.name && <p className="text-xs text-destructive">{formErrors.name}</p>}
+            <label htmlFor="edit-client-phone" className="text-xs text-muted-foreground">Teléfono</label>
             <Input
+              id="edit-client-phone"
               aria-label="Telefono del cliente"
               autoComplete="tel"
               placeholder="Teléfono"

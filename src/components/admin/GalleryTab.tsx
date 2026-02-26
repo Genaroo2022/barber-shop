@@ -550,7 +550,7 @@ const GalleryTab = () => {
 
   const errorClass = (hasError: boolean) => (hasError ? "border-destructive focus-visible:ring-destructive" : "");
 
-  if (loading) return <div className="text-muted-foreground">Cargando galerÃ­a...</div>;
+  if (loading) return <div className="text-muted-foreground">Cargando galería...</div>;
 
   return (
     <div className="space-y-6">
@@ -587,7 +587,9 @@ const GalleryTab = () => {
         <div className="grid md:grid-cols-2 gap-3">
           {uploadMode === "single" && (
             <div className="space-y-1">
+              <label htmlFor="new-gallery-title" className="text-xs text-muted-foreground">Título</label>
               <Input
+                id="new-gallery-title"
                 placeholder="Ej: Corte degradado con barba"
                 value={newForm.title}
                 onChange={(e) => {
@@ -599,13 +601,17 @@ const GalleryTab = () => {
               {newErrors.title && <p className="text-xs text-destructive">{newErrors.title}</p>}
             </div>
           )}
+          <label htmlFor="new-gallery-category" className="text-xs text-muted-foreground">Categoría</label>
           <Input
+            id="new-gallery-category"
             placeholder="Ej: Fade / Clásico (opcional)"
             value={newForm.category}
             onChange={(e) => setNewForm((prev) => ({ ...prev, category: e.target.value }))}
           />
           <div className="space-y-1">
+            <label htmlFor="new-gallery-sort-order" className="text-xs text-muted-foreground">Número de foto</label>
             <Input
+              id="new-gallery-sort-order"
               type="number"
               min="0"
               placeholder="Ej: 1 (orden de aparición)"
@@ -621,7 +627,9 @@ const GalleryTab = () => {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="space-y-1">
+            <label htmlFor="new-gallery-file" className="text-xs text-muted-foreground">Archivo de imagen</label>
             <Input
+              id="new-gallery-file"
               type="file"
               accept="image/*"
               multiple={uploadMode === "multiple"}
@@ -658,7 +666,9 @@ const GalleryTab = () => {
           <div className="space-y-2">
             {newFiles.map((file, index) => (
               <div key={`${file.name}-${index}`} className="space-y-1">
+                <label htmlFor={`new-gallery-file-title-${index}`} className="text-xs text-muted-foreground">Título de la foto</label>
                 <Input
+                  id={`new-gallery-file-title-${index}`}
                   placeholder={`Título para ${file.name} (ej: Corte texturizado)`}
                   value={newFileTitles[index] ?? ""}
                   onChange={(e) => {
@@ -751,7 +761,9 @@ const GalleryTab = () => {
                 </div>
                 <img src={item.imageUrl} alt={item.title} className="w-full h-48 object-cover rounded-lg" />
                 <div className="grid gap-2">
+                  <label htmlFor={`gallery-item-title-${item.id}`} className="text-xs text-muted-foreground">Título</label>
                   <Input
+                    id={`gallery-item-title-${item.id}`}
                     disabled={!isEditing}
                     value={isEditing ? form?.title || "" : item.title}
                     onChange={(e) => {
@@ -761,13 +773,17 @@ const GalleryTab = () => {
                     className={isEditing ? errorClass(Boolean(editingErrors.title)) : ""}
                   />
                   {isEditing && editingErrors.title && <p className="text-xs text-destructive">{editingErrors.title}</p>}
+                  <label htmlFor={`gallery-item-category-${item.id}`} className="text-xs text-muted-foreground">Categoría</label>
                   <Input
+                    id={`gallery-item-category-${item.id}`}
                     disabled={!isEditing}
                     value={isEditing ? form?.category || "" : item.category || ""}
                     placeholder="Ej: Fade / Clásico (opcional)"
                     onChange={(e) => setEditingForm((prev) => ({ ...prev, category: e.target.value }))}
                   />
+                  <label htmlFor={`gallery-item-sort-order-${item.id}`} className="text-xs text-muted-foreground">Número de foto</label>
                   <Input
+                    id={`gallery-item-sort-order-${item.id}`}
                     disabled={!isEditing}
                     type="number"
                     min="0"
@@ -786,7 +802,9 @@ const GalleryTab = () => {
 
                 {isEditing && (
                   <div className="flex flex-wrap items-center gap-3">
+                    <label htmlFor={`gallery-item-file-${item.id}`} className="text-xs text-muted-foreground">Reemplazar imagen</label>
                     <Input
+                      id={`gallery-item-file-${item.id}`}
                       type="file"
                       accept="image/*"
                       onChange={(e) => setEditingFile(e.target.files?.[0] ?? null)}
@@ -919,7 +937,9 @@ const GalleryTab = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
+            <label htmlFor="reorder-current-order" className="text-xs text-muted-foreground">Número actual</label>
             <Input
+              id="reorder-current-order"
               type="number"
               min="0"
               placeholder="Número actual (ej: 4)"
@@ -929,7 +949,9 @@ const GalleryTab = () => {
                 setReorderError(null);
               }}
             />
+            <label htmlFor="reorder-new-order" className="text-xs text-muted-foreground">Nuevo número</label>
             <Input
+              id="reorder-new-order"
               type="number"
               min="0"
               placeholder="Nuevo número (ej: 9)"

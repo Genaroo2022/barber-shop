@@ -443,7 +443,95 @@ const AppointmentsTab = () => {
         </Button>
       </div>
 
-      <div className="glass-card rounded-xl overflow-hidden">
+      <div className="space-y-3 md:hidden">
+        {filteredAppointments.length === 0 ? (
+          <div className="glass-card rounded-xl p-6 text-center text-muted-foreground">
+            No hay turnos registrados para ese mes
+          </div>
+        ) : (
+          filteredAppointments.map((apt) => {
+            const date = new Date(apt.appointmentAt);
+            return (
+              <div key={apt.id} className="glass-card rounded-xl p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{apt.clientName}</p>
+                    <p className="text-xs text-muted-foreground">{apt.clientPhone}</p>
+                  </div>
+                  <Badge variant="outline" className={statusColors[apt.status]}>
+                    {statusLabels[apt.status]}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <p className="text-muted-foreground">Servicio</p>
+                  <p className="text-right">{apt.serviceName}</p>
+                  <p className="text-muted-foreground">Fecha</p>
+                  <p className="text-right">{format(date, "d MMM yyyy", { locale: es })}</p>
+                  <p className="text-muted-foreground">Hora</p>
+                  <p className="text-right">{format(date, "HH:mm")}hs</p>
+                </div>
+
+                <p className="text-sm text-muted-foreground">{apt.notes?.trim() ? apt.notes : "Sin notas"}</p>
+
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {apt.status === "PENDING" && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-10 text-green-500 hover:text-green-400"
+                          onClick={() => updateStatus(apt.id, "CONFIRMED")}
+                          title="Confirmar"
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-10 text-red-500 hover:text-red-400"
+                          onClick={() => updateStatus(apt.id, "CANCELLED")}
+                          title="Cancelar"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                    {apt.status === "CONFIRMED" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-10 text-primary hover:text-primary/80"
+                        onClick={() => updateStatus(apt.id, "COMPLETED")}
+                        title="Completar"
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button size="sm" variant="ghost" className="h-10" onClick={() => startEdit(apt)} title="Editar turno">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-10 text-destructive hover:text-destructive/90"
+                      onClick={() => setDeleteTarget(apt)}
+                      title="Eliminar turno"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="hidden md:block glass-card rounded-xl overflow-hidden">
         <Table className="min-w-[760px]">
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
@@ -487,58 +575,56 @@ const AppointmentsTab = () => {
                       {apt.notes?.trim() ? apt.notes : "-"}
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
-                        {apt.status === "PENDING" && (
-                          <>
+                      <div className="space-y-1">
+                        <div className="flex gap-1">
+                          {apt.status === "PENDING" && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-green-500 hover:text-green-400"
+                                onClick={() => updateStatus(apt.id, "CONFIRMED")}
+                                title="Confirmar"
+                              >
+                                <Check className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-400"
+                                onClick={() => updateStatus(apt.id, "CANCELLED")}
+                                title="Cancelar"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                          {apt.status === "CONFIRMED" && (
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-10 w-10 md:h-8 md:w-8 p-0 text-green-500 hover:text-green-400"
-                              onClick={() => updateStatus(apt.id, "CONFIRMED")}
-                              title="Confirmar"
+                              className="h-8 w-8 p-0 text-primary hover:text-primary/80"
+                              onClick={() => updateStatus(apt.id, "COMPLETED")}
+                              title="Completar"
                             >
                               <Check className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-10 w-10 md:h-8 md:w-8 p-0 text-red-500 hover:text-red-400"
-                              onClick={() => updateStatus(apt.id, "CANCELLED")}
-                              title="Cancelar"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-                        {apt.status === "CONFIRMED" && (
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => startEdit(apt)} title="Editar turno">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-10 w-10 md:h-8 md:w-8 p-0 text-primary hover:text-primary/80"
-                            onClick={() => updateStatus(apt.id, "COMPLETED")}
-                            title="Completar"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive/90"
+                            onClick={() => setDeleteTarget(apt)}
+                            title="Eliminar turno"
                           >
-                            <Check className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-10 w-10 md:h-8 md:w-8 p-0"
-                          onClick={() => startEdit(apt)}
-                          title="Editar turno"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-10 w-10 md:h-8 md:w-8 p-0 text-destructive hover:text-destructive/90"
-                          onClick={() => setDeleteTarget(apt)}
-                          title="Eliminar turno"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>

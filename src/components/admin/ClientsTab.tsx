@@ -165,51 +165,88 @@ const ClientsTab = () => {
         </Button>
       </div>
 
-      <div className="glass-card rounded-xl overflow-hidden">
+      <div className="space-y-3 md:hidden">
+        {clients.length === 0 ? (
+          <div className="glass-card rounded-xl p-6 text-center text-muted-foreground">
+            No hay clientes registrados
+          </div>
+        ) : (
+          clients.map((client) => (
+            <div key={client.id} className="glass-card rounded-xl p-4 space-y-3">
+              <div>
+                <p className="font-medium">{client.clientName}</p>
+                <p className="text-sm text-muted-foreground">{client.clientPhone}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <p className="text-muted-foreground">Turnos totales</p>
+                <p className="text-right">{client.totalAppointments}</p>
+                <p className="text-muted-foreground">Asistió visita</p>
+                <p className="text-right">{client.lastVisit}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button size="sm" variant="ghost" className="h-10" onClick={() => startEdit(client)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-10 text-destructive hover:text-destructive/90"
+                  onClick={() => setDeleteTarget(client)}
+                  title="Eliminar cliente"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="hidden md:block glass-card rounded-xl overflow-hidden">
         <Table className="min-w-[680px]">
-        <TableHeader>
-          <TableRow className="border-border hover:bg-transparent">
-            <TableHead className="text-muted-foreground">Nombre</TableHead>
-            <TableHead className="text-muted-foreground">Teléfono</TableHead>
-            <TableHead className="text-muted-foreground">Turnos totales</TableHead>
-            <TableHead className="text-muted-foreground">Asistió visita</TableHead>
-            <TableHead className="text-muted-foreground">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {clients.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
-                No hay clientes registrados
-              </TableCell>
+          <TableHeader>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="text-muted-foreground">Nombre</TableHead>
+              <TableHead className="text-muted-foreground">Teléfono</TableHead>
+              <TableHead className="text-muted-foreground">Turnos totales</TableHead>
+              <TableHead className="text-muted-foreground">Asistió visita</TableHead>
+              <TableHead className="text-muted-foreground">Acciones</TableHead>
             </TableRow>
-          ) : (
-            clients.map((client) => (
-              <TableRow key={client.id} className="border-border">
-                <TableCell className="font-medium">{client.clientName}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{client.clientPhone}</TableCell>
-                <TableCell className="text-sm">{client.totalAppointments}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{client.lastVisit}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" className="h-10 w-10 md:h-8 md:w-8 p-0" onClick={() => startEdit(client)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-10 w-10 md:h-8 md:w-8 p-0 text-destructive hover:text-destructive/90"
-                      onClick={() => setDeleteTarget(client)}
-                      title="Eliminar cliente"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+          </TableHeader>
+          <TableBody>
+            {clients.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
+                  No hay clientes registrados
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
+            ) : (
+              clients.map((client) => (
+                <TableRow key={client.id} className="border-border">
+                  <TableCell className="font-medium">{client.clientName}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{client.clientPhone}</TableCell>
+                  <TableCell className="text-sm">{client.totalAppointments}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{client.lastVisit}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => startEdit(client)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive/90"
+                        onClick={() => setDeleteTarget(client)}
+                        title="Eliminar cliente"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
         </Table>
       </div>
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -142,7 +142,7 @@ const GalleryTab = () => {
       setImages(data);
       setSelectedImageIds((prev) => prev.filter((id) => data.some((img) => img.id === id)));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Error al cargar imágenes";
+      const message = err instanceof Error ? err.message : "Error al cargar imÃ¡genes";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -166,16 +166,16 @@ const GalleryTab = () => {
     const errors: GalleryFieldErrors = {};
     const titleRequired = options.requireTitle ?? true;
     if (titleRequired && !form.title.trim()) {
-      errors.title = "Completa el título";
+      errors.title = "Completa el tÃ­tulo";
     }
 
     const sortOrder = Number(form.sortOrder);
     if (Number.isNaN(sortOrder) || sortOrder < 0) {
-      errors.sortOrder = "El número debe ser 0 o mayor";
+      errors.sortOrder = "El nÃºmero debe ser 0 o mayor";
     } else {
       const repeated = images.some((img) => img.sortOrder === sortOrder && img.id !== options.excludeId);
       if (repeated && !options.allowSortOrderConflict) {
-        errors.sortOrder = "Ese número ya está en uso por otra foto";
+        errors.sortOrder = "Ese nÃºmero ya estÃ¡ en uso por otra foto";
       }
     }
 
@@ -212,7 +212,7 @@ const GalleryTab = () => {
     const normalized = titles.slice(0, fileCount).map((title) => title.trim());
     for (let index = 0; index < fileCount; index += 1) {
       if (!normalized[index]) {
-        errors[index] = "Completa el título";
+        errors[index] = "Completa el tÃ­tulo";
       }
     }
     return { errors, titles: normalized };
@@ -304,7 +304,7 @@ const GalleryTab = () => {
     }
 
     if (uploadMode === "multiple" && selectedFiles.length === 0) {
-      setNewErrors((prev) => ({ ...prev, file: "Selecciona una o más imágenes" }));
+      setNewErrors((prev) => ({ ...prev, file: "Selecciona una o mÃ¡s imÃ¡genes" }));
       toast.error("Selecciona al menos una imagen");
       return;
     }
@@ -313,7 +313,7 @@ const GalleryTab = () => {
       const titleValidation = validateMultiTitles(newFileTitles, selectedFiles.length);
       if (Object.keys(titleValidation.errors).length > 0) {
         setNewMultiTitleErrors(titleValidation.errors);
-        toast.error("Cada foto debe tener título");
+        toast.error("Cada foto debe tener tÃ­tulo");
         return;
       }
     }
@@ -379,7 +379,7 @@ const GalleryTab = () => {
       emitContentRefresh("gallery");
       await fetchImages();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "No se pudo intercambiar el número";
+      const message = err instanceof Error ? err.message : "No se pudo intercambiar el nÃºmero";
       toast.error(message);
     } finally {
       setUploading(false);
@@ -404,14 +404,14 @@ const GalleryTab = () => {
       toast.success(
         idsToDelete.length === 1
           ? "Imagen eliminada"
-          : `${idsToDelete.length} imágenes eliminadas`
+          : `${idsToDelete.length} imÃ¡genes eliminadas`
       );
       setSelectedImageIds([]);
       setBulkDeleteMode(null);
       emitContentRefresh("gallery");
       await fetchImages();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "No se pudieron eliminar las imágenes";
+      const message = err instanceof Error ? err.message : "No se pudieron eliminar las imÃ¡genes";
       toast.error(message);
     } finally {
       setBulkDeleting(false);
@@ -427,19 +427,19 @@ const GalleryTab = () => {
       fromOrder < 0 ||
       toOrder < 0
     ) {
-      setReorderError("Completa ambos números con valores válidos (0 o mayor)");
+      setReorderError("Completa ambos nÃºmeros con valores vÃ¡lidos (0 o mayor)");
       return;
     }
 
     if (fromOrder === toOrder) {
-      setReorderError("Los números deben ser distintos");
+      setReorderError("Los nÃºmeros deben ser distintos");
       return;
     }
 
     const fromImage = images.find((img) => img.sortOrder === fromOrder);
     const toImage = images.find((img) => img.sortOrder === toOrder);
     if (!fromImage || !toImage) {
-      setReorderError("Uno de los números no existe en la galería");
+      setReorderError("Uno de los nÃºmeros no existe en la galerÃ­a");
       return;
     }
 
@@ -550,7 +550,7 @@ const GalleryTab = () => {
 
   const errorClass = (hasError: boolean) => (hasError ? "border-destructive focus-visible:ring-destructive" : "");
 
-  if (loading) return <div className="text-muted-foreground">Cargando galería...</div>;
+  if (loading) return <div className="text-muted-foreground">Cargando galerÃ­a...</div>;
 
   return (
     <div className="space-y-6">
@@ -588,7 +588,7 @@ const GalleryTab = () => {
           {uploadMode === "single" && (
             <div className="space-y-1">
               <Input
-                placeholder="Titulo"
+                placeholder="Ej: Corte degradado con barba"
                 value={newForm.title}
                 onChange={(e) => {
                   setNewForm((prev) => ({ ...prev, title: e.target.value }));
@@ -600,7 +600,7 @@ const GalleryTab = () => {
             </div>
           )}
           <Input
-            placeholder="Categoria (opcional)"
+            placeholder="Ej: Fade / Clásico (opcional)"
             value={newForm.category}
             onChange={(e) => setNewForm((prev) => ({ ...prev, category: e.target.value }))}
           />
@@ -608,7 +608,7 @@ const GalleryTab = () => {
             <Input
               type="number"
               min="0"
-              placeholder="Número de foto"
+              placeholder="Ej: 1 (orden de aparición)"
               value={newForm.sortOrder}
               onChange={(e) => {
                 setNewForm((prev) => ({ ...prev, sortOrder: e.target.value }));
@@ -659,7 +659,7 @@ const GalleryTab = () => {
             {newFiles.map((file, index) => (
               <div key={`${file.name}-${index}`} className="space-y-1">
                 <Input
-                  placeholder={`Titulo para ${file.name}`}
+                  placeholder={`Título para ${file.name} (ej: Corte texturizado)`}
                   value={newFileTitles[index] ?? ""}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -764,7 +764,7 @@ const GalleryTab = () => {
                   <Input
                     disabled={!isEditing}
                     value={isEditing ? form?.category || "" : item.category || ""}
-                    placeholder="Categoria"
+                    placeholder="Ej: Fade / Clásico (opcional)"
                     onChange={(e) => setEditingForm((prev) => ({ ...prev, category: e.target.value }))}
                   />
                   <Input
@@ -772,7 +772,7 @@ const GalleryTab = () => {
                     type="number"
                     min="0"
                     value={isEditing ? form?.sortOrder || "0" : String(item.sortOrder)}
-                    placeholder="Número de foto"
+                    placeholder="Ej: 1 (orden de aparición)"
                     onChange={(e) => {
                       setEditingForm((prev) => ({ ...prev, sortOrder: e.target.value }));
                       setEditingErrors((prev) => ({ ...prev, sortOrder: undefined }));
@@ -848,8 +848,8 @@ const GalleryTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar imagen</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará la foto
-              {deleteTarget ? ` "${deleteTarget.title}"` : ""} de la galería.
+              Esta acciÃ³n eliminarÃ¡ la foto
+              {deleteTarget ? ` "${deleteTarget.title}"` : ""} de la galerÃ­a.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -870,10 +870,10 @@ const GalleryTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Intercambiar números de fotos</AlertDialogTitle>
             <AlertDialogDescription>
-              Se detectó que ese número ya existe.
+              Se detectÃ³ que ese nÃºmero ya existe.
               {pendingCurrentImage && pendingTargetImage && pendingSortSwap
-                ? ` Si continúas, "${pendingCurrentImage.title}" pasará del número ${pendingCurrentImage.sortOrder} al ${pendingSortSwap.payload.sortOrder}, y "${pendingTargetImage.title}" pasará al número ${pendingCurrentImage.sortOrder}.`
-                : " Si continúas, se intercambiarán los números entre ambas fotos."}
+                ? ` Si continÃºas, "${pendingCurrentImage.title}" pasarÃ¡ del nÃºmero ${pendingCurrentImage.sortOrder} al ${pendingSortSwap.payload.sortOrder}, y "${pendingTargetImage.title}" pasarÃ¡ al nÃºmero ${pendingCurrentImage.sortOrder}.`
+                : " Si continÃºas, se intercambiarÃ¡n los nÃºmeros entre ambas fotos."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -889,12 +889,12 @@ const GalleryTab = () => {
         <AlertDialogContent className="glass-card border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkDeleteMode === "all" ? "Eliminar toda la galería" : "Eliminar imágenes seleccionadas"}
+              {bulkDeleteMode === "all" ? "Eliminar toda la galerÃ­a" : "Eliminar imÃ¡genes seleccionadas"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {bulkDeleteMode === "all"
-                ? "Se eliminarán todas las fotos de la galería."
-                : `Se eliminarán ${selectedImageIds.length} fotos seleccionadas.`}
+                ? "Se eliminarÃ¡n todas las fotos de la galerÃ­a."
+                : `Se eliminarÃ¡n ${selectedImageIds.length} fotos seleccionadas.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -915,7 +915,7 @@ const GalleryTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Intercambiar orden de fotos</AlertDialogTitle>
             <AlertDialogDescription>
-              Cambia dos números de orden en un solo paso. Ejemplo: 4 y 9.
+              Cambia dos nÃºmeros de orden en un solo paso. Ejemplo: 4 y 9.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
@@ -954,3 +954,4 @@ const GalleryTab = () => {
 };
 
 export default GalleryTab;
+

@@ -337,7 +337,7 @@ const IncomeTab = () => {
               type="number"
               min="0"
               step="0.01"
-              placeholder="Monto del corte"
+              placeholder="Ej: 12000 (solo número)"
               value={manualForm.amount}
               onChange={(e) => {
                 setManualForm((prev) => ({ ...prev, amount: e.target.value }));
@@ -352,7 +352,7 @@ const IncomeTab = () => {
               type="number"
               min="0"
               step="0.01"
-              placeholder="Propina"
+              placeholder="Ej: 2000 (opcional)"
               value={manualForm.tipAmount}
               onChange={(e) => {
                 setManualForm((prev) => ({ ...prev, tipAmount: e.target.value }));
@@ -377,7 +377,7 @@ const IncomeTab = () => {
           </div>
         </div>
         <Textarea
-          placeholder="Notas (opcional)"
+          placeholder="Ej: Corte premium + lavado (opcional)"
           value={manualForm.notes}
           onChange={(e) => setManualForm((prev) => ({ ...prev, notes: e.target.value }))}
         />
@@ -455,7 +455,7 @@ const IncomeTab = () => {
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="Monto del corte"
+                placeholder="Ej: 12000 (solo número)"
                 value={editingForm.amount}
                 onChange={(e) => {
                   setEditingForm((prev) => ({ ...prev, amount: e.target.value }));
@@ -470,7 +470,7 @@ const IncomeTab = () => {
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="Propina"
+                placeholder="Ej: 2000 (opcional)"
                 value={editingForm.tipAmount}
                 onChange={(e) => {
                   setEditingForm((prev) => ({ ...prev, tipAmount: e.target.value }));
@@ -493,7 +493,7 @@ const IncomeTab = () => {
               {editingErrors.occurredOn && <p className="text-xs text-destructive">{editingErrors.occurredOn}</p>}
             </div>
             <Textarea
-              placeholder="Notas (opcional)"
+              placeholder="Ej: Corte premium + lavado (opcional)"
               value={editingForm.notes}
               onChange={(e) => setEditingForm((prev) => ({ ...prev, notes: e.target.value }))}
             />

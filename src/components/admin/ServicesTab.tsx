@@ -192,7 +192,7 @@ const ServicesTab = () => {
         <div className="grid md:grid-cols-4 gap-3">
           <div className="space-y-1">
             <Input
-              placeholder="Nombre"
+              placeholder="Ej: Corte clásico"
               value={newService.name}
               onChange={(e) => {
                 setNewService((prev) => ({ ...prev, name: e.target.value }));
@@ -204,7 +204,7 @@ const ServicesTab = () => {
           </div>
           <div className="space-y-1">
             <Input
-              placeholder="Precio"
+              placeholder="Ej: 12000"
               type="number"
               min="0"
               value={newService.price}
@@ -218,7 +218,7 @@ const ServicesTab = () => {
           </div>
           <div className="space-y-1">
             <Input
-              placeholder="Duracion (min)"
+              placeholder="Ej: 45 (min)"
               type="number"
               min="1"
               value={newService.durationMinutes}
@@ -234,7 +234,7 @@ const ServicesTab = () => {
           </div>
           <div className="md:col-span-4">
             <Input
-              placeholder="Descripcion (opcional)"
+              placeholder="Ej: Fade + barba (opcional)"
               value={newService.description}
               onChange={(e) => setNewService((prev) => ({ ...prev, description: e.target.value }))}
             />
@@ -312,7 +312,7 @@ const ServicesTab = () => {
                   <div className="md:col-span-4">
                     <Input
                       disabled={!isEditing}
-                      placeholder="Descripcion (opcional)"
+                      placeholder="Ej: Fade + barba (opcional)"
                       value={isEditing ? editingForm.description : service.description ?? ""}
                       onChange={(e) => setEditingForm((prev) => ({ ...prev, description: e.target.value }))}
                     />

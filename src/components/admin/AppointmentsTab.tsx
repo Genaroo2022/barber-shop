@@ -229,7 +229,7 @@ const AppointmentsTab = () => {
     if (!editingAppointment) return;
     const errors: EditFormErrors = {};
     if (!editForm.clientName.trim()) errors.clientName = "Completa el nombre";
-    if (!editForm.clientPhone.trim()) errors.clientPhone = "Completa el telÃ©fono";
+    if (!editForm.clientPhone.trim()) errors.clientPhone = "Completa el teléfono";
     if (!editForm.serviceId) errors.serviceId = "Selecciona servicio";
     if (!editForm.appointmentAt) errors.appointmentAt = "Completa fecha y hora";
     if (!editForm.status) errors.status = "Selecciona estado";
@@ -283,7 +283,7 @@ const AppointmentsTab = () => {
     }
 
     const csv = buildCsv(
-      ["Cliente", "TelÃ©fono", "Servicio", "Fecha", "Hora", "Estado", "Notas"],
+      ["Cliente", "Teléfono", "Servicio", "Fecha", "Hora", "Estado", "Notas"],
       filteredAppointments.map((apt) => {
         const date = new Date(apt.appointmentAt);
         return [
@@ -308,7 +308,7 @@ const AppointmentsTab = () => {
   const fetchStalePendingAppointments = async (options?: { silent?: boolean }) => {
     if (!thresholdIsValid) {
       if (!options?.silent) {
-        toast.error("El umbral debe ser un nÃºmero mayor o igual a 1");
+        toast.error("El umbral debe ser un número mayor o igual a 1");
       }
       return;
     }
@@ -323,7 +323,7 @@ const AppointmentsTab = () => {
         } else {
           toast.warning(
             stale.length === 1
-              ? "Se detectÃ³ 1 turno pendiente sin confirmar"
+              ? "Se detectó 1 turno pendiente sin confirmar"
               : `Se detectaron ${stale.length} turnos pendientes sin confirmar`
           );
         }
@@ -435,7 +435,7 @@ const AppointmentsTab = () => {
           }}
         >
           <BellRing className="w-4 h-4 mr-2" />
-          Asistente de GestiÃ³n
+          Asistente de Gestión
         </Button>
         <Button variant="outline" size="sm" onClick={exportAppointmentsCsv}>
           <Download className="w-4 h-4 mr-2" />
@@ -661,9 +661,9 @@ const AppointmentsTab = () => {
       <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
         <DialogContent className="glass-card border-border max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Asistente de GestiÃ³n de Turnos</DialogTitle>
+            <DialogTitle>Asistente de Gestión de Turnos</DialogTitle>
             <DialogDescription>
-              Detecta turnos en estado pendiente sin confirmar por mÃ¡s tiempo del esperado.
+              Detecta turnos en estado pendiente sin confirmar por más tiempo del esperado.
             </DialogDescription>
           </DialogHeader>
 
@@ -776,7 +776,7 @@ const AppointmentsTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar turno</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acciÃ³n eliminarÃ¡ el turno
+              Esta acción eliminará el turno
               {deleteTarget ? ` de "${deleteTarget.clientName}"` : ""}.
             </AlertDialogDescription>
           </AlertDialogHeader>

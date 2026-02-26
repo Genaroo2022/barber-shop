@@ -601,13 +601,15 @@ const GalleryTab = () => {
               {newErrors.title && <p className="text-xs text-destructive">{newErrors.title}</p>}
             </div>
           )}
-          <label htmlFor="new-gallery-category" className="text-xs text-muted-foreground">Categoría</label>
-          <Input
-            id="new-gallery-category"
-            placeholder="Ej: Fade / Clásico (opcional)"
-            value={newForm.category}
-            onChange={(e) => setNewForm((prev) => ({ ...prev, category: e.target.value }))}
-          />
+          <div className="space-y-1">
+            <label htmlFor="new-gallery-category" className="text-xs text-muted-foreground">Categoría</label>
+            <Input
+              id="new-gallery-category"
+              placeholder="Ej: Fade / Clásico (opcional)"
+              value={newForm.category}
+              onChange={(e) => setNewForm((prev) => ({ ...prev, category: e.target.value }))}
+            />
+          </div>
           <div className="space-y-1">
             <label htmlFor="new-gallery-sort-order" className="text-xs text-muted-foreground">Número de foto</label>
             <Input

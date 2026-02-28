@@ -16,6 +16,7 @@ import {
   listPublicServices,
   type ServiceItem,
 } from "@/lib/api";
+import { subscribeToContentRefresh } from "@/lib/content-refresh";
 
 const timeSlots = [
   "09:00",
@@ -146,28 +147,33 @@ const BookingForm = () => {
   const whatsappBusinessPhone = sanitizePhoneDigits(import.meta.env.VITE_WHATSAPP_BOOKING_PHONE || "");
   const occupiedRequestRef = useRef<AbortController | null>(null);
   const occupiedRequestSequenceRef = useRef(0);
-
-  useEffect(() => {
-    const cachedServices = readCachedServices();
-    const hasCachedServices = cachedServices !== null;
-    if (cachedServices) {
-      setServices(cachedServices);
-    }
-
-    const fetchServices = async () => {
+  const fetchServices = useCallback(
+    async (showError: boolean) => {
       try {
         const data = await listPublicServices();
         setServices(data);
         writeCachedServices(data);
       } catch (err) {
-        if (!hasCachedServices) {
-          const message = err instanceof Error ? err.message : "No se pudieron cargar los servicios";
-          toast.error(message);
-        }
+        if (!showError) return;
+        const message = err instanceof Error ? err.message : "No se pudieron cargar los servicios";
+        toast.error(message);
       }
-    };
-    void fetchServices();
-  }, []);
+    },
+    []
+  );
+
+  useEffect(() => {
+    const cachedServices = readCachedServices();
+    if (cachedServices) {
+      setServices(cachedServices);
+    }
+    void fetchServices(!cachedServices);
+  }, [fetchServices]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToContentRefresh("services", () => fetchServices(false));
+    return unsubscribe;
+  }, [fetchServices]);
 
   const selectedServiceName = useMemo(
     () => services.find((s) => s.id === serviceId)?.name || "",

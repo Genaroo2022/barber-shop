@@ -909,12 +909,12 @@ const GalleryTab = () => {
         <AlertDialogContent className="glass-card border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkDeleteMode === "all" ? "Eliminar toda la galerÃ­a" : "Eliminar imÃ¡genes seleccionadas"}
+              {bulkDeleteMode === "all" ? "Eliminar toda la galería" : "Eliminar imágenes seleccionadas"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {bulkDeleteMode === "all"
-                ? "Se eliminarÃ¡n todas las fotos de la galerÃ­a."
-                : `Se eliminarÃ¡n ${selectedImageIds.length} fotos seleccionadas.`}
+                ? "Se eliminarán todas las fotos de la galería."
+                : `Se eliminarán ${selectedImageIds.length} fotos seleccionadas.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

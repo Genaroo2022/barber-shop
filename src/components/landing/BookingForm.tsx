@@ -147,13 +147,26 @@ const BookingForm = () => {
   const whatsappBusinessPhone = sanitizePhoneDigits(import.meta.env.VITE_WHATSAPP_BOOKING_PHONE || "");
   const occupiedRequestRef = useRef<AbortController | null>(null);
   const occupiedRequestSequenceRef = useRef(0);
+  const servicesRequestRef = useRef<AbortController | null>(null);
+  const servicesRequestSequenceRef = useRef(0);
   const fetchServices = useCallback(
     async (showError: boolean) => {
+      servicesRequestRef.current?.abort();
+      const requestController = new AbortController();
+      servicesRequestRef.current = requestController;
+      const requestSequence = ++servicesRequestSequenceRef.current;
+
       try {
-        const data = await listPublicServices();
+        const data = await listPublicServices(requestController.signal);
+        if (requestSequence !== servicesRequestSequenceRef.current) {
+          return;
+        }
         setServices(data);
         writeCachedServices(data);
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
         if (!showError) return;
         const message = err instanceof Error ? err.message : "No se pudieron cargar los servicios";
         toast.error(message);
@@ -335,6 +348,7 @@ const BookingForm = () => {
 
   useEffect(
     () => () => {
+      servicesRequestRef.current?.abort();
       occupiedRequestRef.current?.abort();
     },
     []

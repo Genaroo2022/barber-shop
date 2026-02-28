@@ -185,8 +185,8 @@ export async function loginWithFirebase(idToken: string): Promise<LoginResponse>
   });
 }
 
-export async function listPublicServices(): Promise<ServiceItem[]> {
-  return apiRequest<ServiceItem[]>("/api/public/services");
+export async function listPublicServices(signal?: AbortSignal): Promise<ServiceItem[]> {
+  return apiRequest<ServiceItem[]>("/api/public/services", { signal });
 }
 
 export async function createPublicAppointment(payload: {

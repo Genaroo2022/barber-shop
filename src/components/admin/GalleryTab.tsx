@@ -142,7 +142,7 @@ const GalleryTab = () => {
       setImages(data);
       setSelectedImageIds((prev) => prev.filter((id) => data.some((img) => img.id === id)));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Error al cargar imÃ¡genes";
+      const message = err instanceof Error ? err.message : "Error al cargar imágenes";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -166,16 +166,16 @@ const GalleryTab = () => {
     const errors: GalleryFieldErrors = {};
     const titleRequired = options.requireTitle ?? true;
     if (titleRequired && !form.title.trim()) {
-      errors.title = "Completa el tÃ­tulo";
+      errors.title = "Completa el título";
     }
 
     const sortOrder = Number(form.sortOrder);
     if (Number.isNaN(sortOrder) || sortOrder < 0) {
-      errors.sortOrder = "El nÃºmero debe ser 0 o mayor";
+      errors.sortOrder = "El número debe ser 0 o mayor";
     } else {
       const repeated = images.some((img) => img.sortOrder === sortOrder && img.id !== options.excludeId);
       if (repeated && !options.allowSortOrderConflict) {
-        errors.sortOrder = "Ese nÃºmero ya estÃ¡ en uso por otra foto";
+        errors.sortOrder = "Ese número ya está en uso por otra foto";
       }
     }
 
@@ -212,7 +212,7 @@ const GalleryTab = () => {
     const normalized = titles.slice(0, fileCount).map((title) => title.trim());
     for (let index = 0; index < fileCount; index += 1) {
       if (!normalized[index]) {
-        errors[index] = "Completa el tÃ­tulo";
+        errors[index] = "Completa el título";
       }
     }
     return { errors, titles: normalized };
@@ -304,7 +304,7 @@ const GalleryTab = () => {
     }
 
     if (uploadMode === "multiple" && selectedFiles.length === 0) {
-      setNewErrors((prev) => ({ ...prev, file: "Selecciona una o mÃ¡s imÃ¡genes" }));
+      setNewErrors((prev) => ({ ...prev, file: "Selecciona una o más imágenes" }));
       toast.error("Selecciona al menos una imagen");
       return;
     }
@@ -313,7 +313,7 @@ const GalleryTab = () => {
       const titleValidation = validateMultiTitles(newFileTitles, selectedFiles.length);
       if (Object.keys(titleValidation.errors).length > 0) {
         setNewMultiTitleErrors(titleValidation.errors);
-        toast.error("Cada foto debe tener tÃ­tulo");
+        toast.error("Cada foto debe tener título");
         return;
       }
     }
@@ -379,7 +379,7 @@ const GalleryTab = () => {
       emitContentRefresh("gallery");
       await fetchImages();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "No se pudo intercambiar el nÃºmero";
+      const message = err instanceof Error ? err.message : "No se pudo intercambiar el número";
       toast.error(message);
     } finally {
       setUploading(false);
@@ -404,14 +404,14 @@ const GalleryTab = () => {
       toast.success(
         idsToDelete.length === 1
           ? "Imagen eliminada"
-          : `${idsToDelete.length} imÃ¡genes eliminadas`
+          : `${idsToDelete.length} imágenes eliminadas`
       );
       setSelectedImageIds([]);
       setBulkDeleteMode(null);
       emitContentRefresh("gallery");
       await fetchImages();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "No se pudieron eliminar las imÃ¡genes";
+      const message = err instanceof Error ? err.message : "No se pudieron eliminar las imágenes";
       toast.error(message);
     } finally {
       setBulkDeleting(false);
@@ -427,19 +427,19 @@ const GalleryTab = () => {
       fromOrder < 0 ||
       toOrder < 0
     ) {
-      setReorderError("Completa ambos nÃºmeros con valores vÃ¡lidos (0 o mayor)");
+      setReorderError("Completa ambos números con valores válidos (0 o mayor)");
       return;
     }
 
     if (fromOrder === toOrder) {
-      setReorderError("Los nÃºmeros deben ser distintos");
+      setReorderError("Los números deben ser distintos");
       return;
     }
 
     const fromImage = images.find((img) => img.sortOrder === fromOrder);
     const toImage = images.find((img) => img.sortOrder === toOrder);
     if (!fromImage || !toImage) {
-      setReorderError("Uno de los nÃºmeros no existe en la galerÃ­a");
+      setReorderError("Uno de los números no existe en la galería");
       return;
     }
 
@@ -868,8 +868,8 @@ const GalleryTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar imagen</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acciÃ³n eliminarÃ¡ la foto
-              {deleteTarget ? ` "${deleteTarget.title}"` : ""} de la galerÃ­a.
+              Esta acción eliminará la foto
+              {deleteTarget ? ` "${deleteTarget.title}"` : ""} de la galería.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -890,10 +890,10 @@ const GalleryTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Intercambiar números de fotos</AlertDialogTitle>
             <AlertDialogDescription>
-              Se detectÃ³ que ese nÃºmero ya existe.
+              Se detectó que ese número ya existe.
               {pendingCurrentImage && pendingTargetImage && pendingSortSwap
-                ? ` Si continÃºas, "${pendingCurrentImage.title}" pasarÃ¡ del nÃºmero ${pendingCurrentImage.sortOrder} al ${pendingSortSwap.payload.sortOrder}, y "${pendingTargetImage.title}" pasarÃ¡ al nÃºmero ${pendingCurrentImage.sortOrder}.`
-                : " Si continÃºas, se intercambiarÃ¡n los nÃºmeros entre ambas fotos."}
+                ? ` Si continúas, "${pendingCurrentImage.title}" pasará del número ${pendingCurrentImage.sortOrder} al ${pendingSortSwap.payload.sortOrder}, y "${pendingTargetImage.title}" pasará al número ${pendingCurrentImage.sortOrder}.`
+                : " Si continúas, se intercambiarán los números entre ambas fotos."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -935,7 +935,7 @@ const GalleryTab = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Intercambiar orden de fotos</AlertDialogTitle>
             <AlertDialogDescription>
-              Cambia dos nÃºmeros de orden en un solo paso. Ejemplo: 4 y 9.
+              Cambia dos números de orden en un solo paso. Ejemplo: 4 y 9.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">

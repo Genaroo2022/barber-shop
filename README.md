@@ -57,9 +57,9 @@ docker compose down
   - Polling en admin de turnos + toast cuando llegan turnos nuevos (sin recargar pagina)
   - Rate limiting para login y para reservas publicas por IP
   - Endpoint publico liviano para monitoreo externo: `GET /api/health` (sin acceso a DB)
-  - Optimizacion de carga de servicios publicos:
-    - cache en backend (Caffeine, TTL)
-    - invalidacion en mutaciones admin de servicios
+  - Optimizacion de carga de servicios y galeria publicos:
+    - cache en backend (Caffeine, TTL) para `/api/public/services` y `/api/public/gallery`
+    - invalidacion en mutaciones admin de servicios y galeria
     - fallback inmediato en frontend desde cache local + revalidacion en background
 
 ## Modelo de dominio
@@ -232,10 +232,14 @@ JWT_EXPIRATION_SECONDS=28800
 PORT=8080
 ```
 
-Health check recomendado en Render: `/api/public/services`.
+Health check recomendado en Render: `/api/health`.
 
 Para uptime monitor externo (ej. UptimeRobot) usa:
 - `/api/health` (no toca Neon ni hace queries)
+
+Evita usar `/api/public/services` o `/api/public/gallery` como health check o monitor:
+- ambos endpoints pueden tocar Neon
+- eso impide que el compute entre en suspension y consume CU-hours aunque no haya trafico real
 
 ### 3) Frontend en Vercel o Netlify
 
@@ -387,6 +391,7 @@ curl -X PATCH http://localhost:8080/api/admin/appointments/<APPOINTMENT_ID>/stat
 - Los botones `Descargar` de `Turnos` e `Ingresos` exportan solo el mes seleccionado.
 - En Admin > Turnos, hay refresco automatico periodico y toast de nuevos turnos.
 - En booking publico, un horario reservado desaparece inmediatamente y tambien se recalcula automaticamente desde backend.
+- Servicios y galeria publicos usan cache de backend + fallback local en frontend para amortiguar cold starts de Neon.
 - Login admin migrado a Firebase Authentication (Google popup).
 - El JWT de admin en frontend se guarda en `sessionStorage` (no persiste entre cierres de navegador).
 - Al cerrar sesion en Admin se limpia JWT y tambien se cierra sesion Firebase (evita reingreso automatico al volver a `/acceso-admin-9x7p`).

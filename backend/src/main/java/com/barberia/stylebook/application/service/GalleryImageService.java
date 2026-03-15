@@ -6,6 +6,8 @@ import com.barberia.stylebook.domain.entity.GalleryImage;
 import com.barberia.stylebook.repository.GalleryImageRepository;
 import com.barberia.stylebook.web.dto.AdminGalleryImageUpsertRequest;
 import com.barberia.stylebook.web.dto.GalleryImageResponse;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class GalleryImageService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "publicGallery")
     public List<GalleryImageResponse> listPublic() {
         return galleryImageRepository.findAllByActiveTrueOrderBySortOrderAscCreatedAtDesc().stream()
                 .map(this::toResponse)
@@ -51,6 +54,7 @@ public class GalleryImageService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "publicGallery", allEntries = true)
     public GalleryImageResponse create(AdminGalleryImageUpsertRequest request) {
         GalleryImage image = new GalleryImage();
         apply(image, request);
@@ -58,6 +62,7 @@ public class GalleryImageService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "publicGallery", allEntries = true)
     public GalleryImageResponse update(UUID id, AdminGalleryImageUpsertRequest request) {
         GalleryImage image = galleryImageRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Imagen no encontrada"));
@@ -67,6 +72,7 @@ public class GalleryImageService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "publicGallery", allEntries = true)
     public void delete(UUID id) {
         GalleryImage image = galleryImageRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Imagen no encontrada"));

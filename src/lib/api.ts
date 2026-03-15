@@ -387,8 +387,8 @@ export async function deleteAdminService(id: string): Promise<void> {
   });
 }
 
-export async function listPublicGalleryImages(): Promise<GalleryImageItem[]> {
-  return apiRequest<GalleryImageItem[]>("/api/public/gallery");
+export async function listPublicGalleryImages(signal?: AbortSignal): Promise<GalleryImageItem[]> {
+  return apiRequest<GalleryImageItem[]>("/api/public/gallery", { signal });
 }
 
 export async function listAdminGalleryImages(limit = 500, page = 0): Promise<GalleryImageItem[]> {

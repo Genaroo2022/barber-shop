@@ -13,7 +13,7 @@ spring:
     locations: classpath:db/migration
   cache:
     type: caffeine
-    cache-names: publicServices
+    cache-names: publicServices,publicGallery
     caffeine:
       spec: maximumSize=128,expireAfterWrite=10m
 

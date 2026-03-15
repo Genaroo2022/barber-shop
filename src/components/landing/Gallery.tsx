@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ImageIcon } from "lucide-react";
 import { listPublicGalleryImages, type GalleryImageItem } from "@/lib/api";
@@ -11,32 +11,111 @@ type VisualGalleryItem = {
   imageUrl?: string;
 };
 
+type GalleryCachePayload = {
+  version: 1;
+  savedAt: number;
+  data: GalleryImageItem[];
+};
+
+const GALLERY_CACHE_KEY = "stylebook:public-gallery:v1";
+
 const fallbackGallery: VisualGalleryItem[] = [
-  { id: "fallback-1", title: "Fade clásico", category: "Corte" },
+  { id: "fallback-1", title: "Fade cl\u00e1sico", category: "Corte" },
   { id: "fallback-2", title: "Pompadour moderno", category: "Corte" },
   { id: "fallback-3", title: "Barba definida", category: "Barba" },
   { id: "fallback-4", title: "Undercut", category: "Corte" },
-  { id: "fallback-5", title: "Degradé + diseño", category: "Corte" },
+  { id: "fallback-5", title: "Degrad\u00e9 + dise\u00f1o", category: "Corte" },
   { id: "fallback-6", title: "Barba full", category: "Barba" },
 ];
 
+const isValidGalleryItemArray = (value: unknown): value is GalleryImageItem[] => {
+  if (!Array.isArray(value)) return false;
+  return value.every((item) =>
+    typeof item === "object" &&
+    item !== null &&
+    typeof (item as GalleryImageItem).id === "string" &&
+    typeof (item as GalleryImageItem).title === "string" &&
+    typeof (item as GalleryImageItem).imageUrl === "string" &&
+    typeof (item as GalleryImageItem).sortOrder === "number" &&
+    typeof (item as GalleryImageItem).active === "boolean"
+  );
+};
+
+const readCachedGallery = (): GalleryImageItem[] | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(GALLERY_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as GalleryCachePayload;
+    if (!parsed || parsed.version !== 1 || !isValidGalleryItemArray(parsed.data)) {
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedGallery = (images: GalleryImageItem[]) => {
+  if (typeof window === "undefined") return;
+  const payload: GalleryCachePayload = {
+    version: 1,
+    savedAt: Date.now(),
+    data: images,
+  };
+  try {
+    window.localStorage.setItem(GALLERY_CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // Ignore storage quota/private mode errors.
+  }
+};
+
 const Gallery = () => {
   const [images, setImages] = useState<GalleryImageItem[]>([]);
+  const requestRef = useRef<AbortController | null>(null);
+  const requestSequenceRef = useRef(0);
 
-  const fetchGallery = useCallback(async () => {
+  const fetchGallery = useCallback(async (showFallbackOnError: boolean) => {
+    requestRef.current?.abort();
+    const requestController = new AbortController();
+    requestRef.current = requestController;
+    const requestSequence = ++requestSequenceRef.current;
+
     try {
-      const data = await listPublicGalleryImages();
+      const data = await listPublicGalleryImages(requestController.signal);
+      if (requestSequence !== requestSequenceRef.current) {
+        return;
+      }
       setImages(data);
-    } catch {
+      writeCachedGallery(data);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+      if (!showFallbackOnError) return;
       setImages([]);
     }
   }, []);
 
   useEffect(() => {
-    fetchGallery();
-    const unsubscribe = subscribeToContentRefresh("gallery", fetchGallery);
+    const cachedGallery = readCachedGallery();
+    if (cachedGallery) {
+      setImages(cachedGallery);
+    }
+    void fetchGallery(!cachedGallery);
+  }, [fetchGallery]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToContentRefresh("gallery", () => fetchGallery(false));
     return unsubscribe;
   }, [fetchGallery]);
+
+  useEffect(
+    () => () => {
+      requestRef.current?.abort();
+    },
+    []
+  );
 
   const items: VisualGalleryItem[] =
     images.length > 0
@@ -58,7 +137,7 @@ const Gallery = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">Galería</p>
+          <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">Galer\u00eda</p>
           <h2 className="text-4xl md:text-5xl font-display font-bold">
             Nuestros <span className="gold-text">trabajos</span>
           </h2>
@@ -79,7 +158,7 @@ const Gallery = () => {
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-secondary/50">
                   <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
-                  <span className="text-muted-foreground/50 text-xs">Foto próximamente</span>
+                  <span className="text-muted-foreground/50 text-xs">Foto pr\u00f3ximamente</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
@@ -93,7 +172,7 @@ const Gallery = () => {
         </div>
         {images.length === 0 && (
           <p className="text-center text-muted-foreground text-sm mt-8">
-            Próximamente, fotos reales de nuestros trabajos
+            Pr\u00f3ximamente, fotos reales de nuestros trabajos
           </p>
         )}
       </div>

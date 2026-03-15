@@ -33,3 +33,6 @@ security-check.http
 
 # Build artifacts
 backend/target/
+
+# Local tool state
+.gemini/

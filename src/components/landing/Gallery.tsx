@@ -137,7 +137,7 @@ const Gallery = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">Galer\u00eda</p>
+          <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">Galería</p>
           <h2 className="text-4xl md:text-5xl font-display font-bold">
             Nuestros <span className="gold-text">trabajos</span>
           </h2>
@@ -158,7 +158,7 @@ const Gallery = () => {
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-secondary/50">
                   <ImageIcon className="w-10 h-10 text-muted-foreground/50" />
-                  <span className="text-muted-foreground/50 text-xs">Foto pr\u00f3ximamente</span>
+                  <span className="text-muted-foreground/50 text-xs">Foto próximamente</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
@@ -172,7 +172,7 @@ const Gallery = () => {
         </div>
         {images.length === 0 && (
           <p className="text-center text-muted-foreground text-sm mt-8">
-            Pr\u00f3ximamente, fotos reales de nuestros trabajos
+            Próximamente, fotos reales de nuestros trabajos
           </p>
         )}
       </div>

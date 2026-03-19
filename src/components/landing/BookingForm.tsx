@@ -483,7 +483,7 @@ const BookingForm = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">Reserva tu turno</p>
+          <p className="text-primary/85 text-sm font-medium uppercase tracking-widest mb-3">Reserva tu turno</p>
           <h2 className="text-4xl md:text-5xl font-display font-bold">
             Agenda <span className="gold-text">Ahora</span>
           </h2>
@@ -494,10 +494,10 @@ const BookingForm = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           onSubmit={handleSubmit}
-          className="glass-card rounded-2xl p-6 sm:p-8 md:p-12 max-w-lg mx-auto space-y-6"
+          className="rounded-2xl border border-primary/10 bg-[linear-gradient(180deg,hsl(210_22%_16%_/_0.96),hsl(210_20%_13%_/_0.98))] p-6 sm:p-8 md:p-12 max-w-lg mx-auto space-y-6"
         >
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-foreground/80">
+            <Label htmlFor="name" className="text-foreground/88">
               Nombre completo
             </Label>
             <Input
@@ -514,13 +514,13 @@ const BookingForm = () => {
                   return { ...prev, name: getNameValidationMessage(value) ?? undefined };
                 });
               }}
-              className={`bg-secondary/50 border-border/50 focus:border-primary ${errorClass(Boolean(fieldErrors.name))}`}
+              className={`border-primary/12 bg-[hsl(210_18%_20%_/_0.92)] text-foreground placeholder:text-[hsl(38_12%_67%)] focus:border-primary/60 ${errorClass(Boolean(fieldErrors.name))}`}
             />
             {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-foreground/80">
+            <Label htmlFor="phone" className="text-foreground/88">
               Teléfono
             </Label>
             <Input
@@ -537,13 +537,13 @@ const BookingForm = () => {
                   return { ...prev, phone: getPhoneValidationMessage(value) ?? undefined };
                 });
               }}
-              className={`bg-secondary/50 border-border/50 focus:border-primary ${errorClass(Boolean(fieldErrors.phone))}`}
+              className={`border-primary/12 bg-[hsl(210_18%_20%_/_0.92)] text-foreground placeholder:text-[hsl(38_12%_67%)] focus:border-primary/60 ${errorClass(Boolean(fieldErrors.phone))}`}
             />
             {fieldErrors.phone && <p className="text-xs text-destructive">{fieldErrors.phone}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="booking-service" className="text-foreground/80">Servicio</Label>
+            <Label htmlFor="booking-service" className="text-foreground/88">Servicio</Label>
             <Select
               name="serviceId"
               value={serviceId}
@@ -556,11 +556,11 @@ const BookingForm = () => {
               <SelectTrigger
                 id="booking-service"
                 aria-label="Servicio"
-                className={`bg-secondary/50 border-border/50 ${fieldErrors.serviceId ? "border-destructive ring-destructive" : ""}`}
+                className={`border-primary/12 bg-[hsl(210_18%_20%_/_0.92)] text-foreground ${fieldErrors.serviceId ? "border-destructive ring-destructive" : "focus:border-primary/60"}`}
               >
                 <SelectValue placeholder="Elige un servicio" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border">
+              <SelectContent className="border-primary/12 bg-[hsl(210_22%_16%)] text-foreground">
                 {services.map((service) => (
                   <SelectItem key={service.id} value={service.id}>
                     {service.name} - ${Number(service.price).toLocaleString("es-AR")}
@@ -572,20 +572,20 @@ const BookingForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="booking-date" className="text-foreground/80">Fecha</Label>
+            <Label htmlFor="booking-date" className="text-foreground/88">Fecha</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   id="booking-date"
                   aria-label="Fecha"
                   variant="outline"
-                  className={`w-full justify-start text-left bg-secondary/50 border-border/50 hover:bg-secondary ${errorClass(Boolean(fieldErrors.date))}`}
+                  className={`w-full justify-start border-primary/12 bg-[hsl(210_18%_20%_/_0.92)] text-left text-foreground hover:bg-[hsl(210_18%_23%_/_0.96)] ${errorClass(Boolean(fieldErrors.date))}`}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
                   {date ? format(date, "PPP", { locale: es }) : "Selecciona una fecha"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+              <PopoverContent className="w-auto border-primary/12 bg-[hsl(210_22%_16%)] p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={date}
@@ -603,7 +603,7 @@ const BookingForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="booking-time" className="text-foreground/80">Horario</Label>
+            <Label htmlFor="booking-time" className="text-foreground/88">Horario</Label>
             <Select
               name="time"
               value={time}
@@ -617,7 +617,7 @@ const BookingForm = () => {
                 id="booking-time"
                 aria-label="Horario"
                 onClick={refreshOccupiedSlotsIfReady}
-                className={`bg-secondary/50 border-border/50 ${fieldErrors.time ? "border-destructive ring-destructive" : ""}`}
+                className={`border-primary/12 bg-[hsl(210_18%_20%_/_0.92)] text-foreground ${fieldErrors.time ? "border-destructive ring-destructive" : "focus:border-primary/60"}`}
               >
                 <SelectValue
                   placeholder={
@@ -629,7 +629,7 @@ const BookingForm = () => {
                   }
                 />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border">
+              <SelectContent className="border-primary/12 bg-[hsl(210_22%_16%)] text-foreground">
                 {availableTimeSlots.map((slot) => (
                   <SelectItem key={slot} value={slot}>
                     {slot}hs

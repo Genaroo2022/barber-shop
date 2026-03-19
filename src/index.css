@@ -6,23 +6,23 @@
 
 @layer base {
   :root {
-    --background: 220 20% 6%;
-    --foreground: 40 20% 92%;
+    --background: 210 24% 11%;
+    --foreground: 40 24% 93%;
 
-    --card: 220 18% 10%;
-    --card-foreground: 40 20% 92%;
+    --card: 210 22% 14%;
+    --card-foreground: 40 24% 93%;
 
-    --popover: 220 18% 10%;
-    --popover-foreground: 40 20% 92%;
+    --popover: 210 22% 14%;
+    --popover-foreground: 40 24% 93%;
 
     --primary: 40 65% 50%;
     --primary-foreground: 220 20% 6%;
 
-    --secondary: 220 15% 15%;
-    --secondary-foreground: 40 20% 85%;
+    --secondary: 210 18% 18%;
+    --secondary-foreground: 40 22% 87%;
 
-    --muted: 220 15% 14%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 210 18% 17%;
+    --muted-foreground: 210 12% 69%;
 
     --accent: 40 65% 50%;
     --accent-foreground: 220 20% 6%;
@@ -30,26 +30,26 @@
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
+    --border: 210 16% 24%;
+    --input: 210 16% 24%;
     --ring: 40 65% 50%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 220 20% 8%;
-    --sidebar-foreground: 40 20% 85%;
+    --sidebar-background: 210 22% 12%;
+    --sidebar-foreground: 40 22% 87%;
     --sidebar-primary: 40 65% 50%;
     --sidebar-primary-foreground: 220 20% 6%;
-    --sidebar-accent: 220 15% 14%;
-    --sidebar-accent-foreground: 40 20% 85%;
-    --sidebar-border: 220 15% 16%;
+    --sidebar-accent: 210 18% 17%;
+    --sidebar-accent-foreground: 40 22% 87%;
+    --sidebar-border: 210 16% 22%;
     --sidebar-ring: 40 65% 50%;
 
     --gold: 40 65% 50%;
     --gold-light: 40 70% 65%;
     --gold-dark: 40 60% 35%;
-    --dark-surface: 220 18% 10%;
-    --darker-surface: 220 20% 7%;
+    --dark-surface: 210 22% 14%;
+    --darker-surface: 210 24% 10%;
   }
 }
 
@@ -114,9 +114,9 @@
     background-clip: text;
   }
   .glass-card {
-    background: hsl(220 18% 10% / 0.8);
+    background: hsl(210 22% 14% / 0.82);
     backdrop-filter: blur(16px);
-    border: 1px solid hsl(220 15% 18%);
+    border: 1px solid hsl(210 16% 24%);
   }
   .gold-border-glow {
     box-shadow: 0 0 20px hsl(40 65% 50% / 0.15), inset 0 0 20px hsl(40 65% 50% / 0.05);

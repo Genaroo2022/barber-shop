@@ -89,7 +89,7 @@ const Services = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <p className="text-primary text-sm font-medium uppercase tracking-widest mb-3">Nuestros servicios</p>
+          <p className="text-primary/85 text-sm font-medium uppercase tracking-widest mb-3">Nuestros servicios</p>
           <h2 className="text-4xl md:text-5xl font-display font-bold">
             Precios <span className="gold-text">transparentes</span>
           </h2>
@@ -103,18 +103,18 @@ const Services = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.15 }}
-              className={`glass-card rounded-xl p-8 text-center relative group hover:border-primary/30 transition-colors ${
-                service.featured ? "gold-border-glow border-primary/20" : ""
+              className={`rounded-xl border border-primary/10 bg-[linear-gradient(180deg,hsl(210_22%_16%_/_0.95),hsl(210_20%_13%_/_0.98))] p-8 text-center relative group hover:border-primary/28 transition-colors ${
+                service.featured ? "gold-border-glow border-primary/22 bg-[linear-gradient(180deg,hsl(210_24%_18%_/_0.98),hsl(210_21%_14%_/_0.98))]" : ""
               }`}
             >
               {service.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 gold-gradient text-primary-foreground text-xs font-semibold px-4 py-1 rounded-full">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-primary/20 gold-gradient px-4 py-1 text-xs font-semibold text-primary-foreground">
                   POPULAR
                 </div>
               )}
-              <service.icon className="w-8 h-8 text-primary mx-auto mb-4" />
-              <h3 className="font-display text-xl font-semibold mb-2">{service.name}</h3>
-              {service.description && <p className="text-muted-foreground text-sm mb-6">{service.description}</p>}
+              <service.icon className="w-8 h-8 text-primary/90 mx-auto mb-4" />
+              <h3 className="font-display text-xl font-semibold mb-2 text-foreground">{service.name}</h3>
+              {service.description && <p className="text-sm mb-6 text-[hsl(38_18%_74%)]">{service.description}</p>}
               <p className="text-3xl font-display font-bold gold-text">{service.priceLabel}</p>
             </motion.div>
           ))}
